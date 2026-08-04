@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Papan Koordinasi Tim</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --border: #e2e4e9;
+    --text: #1f2430;
+    --text-muted: #6b7280;
+    --accent: #4f46e5;
+    --accent-soft: #eef2ff;
+    --belum: #9ca3af;
+    --dikerjakan: #f59e0b;
+    --selesai: #16a34a;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .container {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 24px 16px 64px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  header h1 {
+    margin: 0 0 4px;
+    font-size: 1.6rem;
+  }
+
+  header p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
+
+  .card-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  form#task-form {
+    display: grid;
+    grid-template-columns: 2fr 1.5fr 1.3fr auto;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  form#task-form label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  form#task-form input,
+  form#task-form select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 0.95rem;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  form#task-form input:focus,
+  form#task-form select:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--surface);
+  }
+
+  form#task-form button {
+    align-self: end;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  form#task-form button:hover {
+    background: #4338ca;
+  }
+
+  .board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .column {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    min-height: 120px;
+  }
+
+  .column h2 {
+    font-size: 1rem;
+    margin: 0 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .dot.belum { background: var(--belum); }
+  .dot.dikerjakan { background: var(--dikerjakan); }
+  .dot.selesai { background: var(--selesai); }
+
+  .count {
+    color: var(--text-muted);
+    font-weight: 400;
+    font-size: 0.85rem;
+  }
+
+  .task-list {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .task-card {
+    background: var(--accent-soft);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+
+  .task-card .nama {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+  }
+
+  .task-card .pj {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  .task-card select {
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font-size: 0.85rem;
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .empty-hint {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-top: 12px;
+  }
+
+  @media (max-width: 720px) {
+    form#task-form {
+      grid-template-columns: 1fr;
+    }
+    .board {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Papan Koordinasi Tim</h1>
+      <p>Satu tempat untuk lihat dan update status tugas tim, tanpa scroll chat WhatsApp lagi.</p>
+    </header>
+
+    <div class="card-panel">
+      <form id="task-form">
+        <div>
+          <label for="nama-tugas">Nama Tugas</label>
+          <input type="text" id="nama-tugas" placeholder="Contoh: Siapkan materi presentasi" required>
+        </div>
+        <div>
+          <label for="penanggung-jawab">Penanggung Jawab</label>
+          <input type="text" id="penanggung-jawab" placeholder="Contoh: Alvin" required>
+        </div>
+        <div>
+          <label for="status-awal">Status</label>
+          <select id="status-awal">
+            <option value="Belum Mulai">Belum Mulai</option>
+            <option value="Dikerjakan">Dikerjakan</option>
+            <option value="Selesai">Selesai</option>
+          </select>
+        </div>
+        <button type="submit">Tambah Tugas</button>
+      </form>
+    </div>
+
+    <div class="board">
+      <section class="column" data-status="Belum Mulai">
+        <h2><span class="dot belum"></span>Belum Mulai <span class="count" data-count="Belum Mulai"></span></h2>
+        <div class="task-list" data-list="Belum Mulai"></div>
+      </section>
+      <section class="column" data-status="Dikerjakan">
+        <h2><span class="dot dikerjakan"></span>Dikerjakan <span class="count" data-count="Dikerjakan"></span></h2>
+        <div class="task-list" data-list="Dikerjakan"></div>
+      </section>
+      <section class="column" data-status="Selesai">
+        <h2><span class="dot selesai"></span>Selesai <span class="count" data-count="Selesai"></span></h2>
+        <div class="task-list" data-list="Selesai"></div>
+      </section>
+    </div>
+  </div>
+
+<script>
+  const STORAGE_KEY = 'papan-koordinasi-tugas';
+  const STATUSES = ['Belum Mulai', 'Dikerjakan', 'Selesai'];
+
+  function loadTasks() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }
+
+  function saveTasks(tasks) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+  }
+
+  let tasks = loadTasks();
+
+  function render() {
+    STATUSES.forEach(status => {
+      const list = document.querySelector(`[data-list="${status}"]`);
+      const countEl = document.querySelector(`[data-count="${status}"]`);
+      const items = tasks.filter(t => t.status === status);
+
+      countEl.textContent = `(${items.length})`;
+      list.innerHTML = '';
+
+      if (items.length === 0) {
+        const hint = document.createElement('p');
+        hint.className = 'empty-hint';
+        hint.textContent = 'Belum ada tugas.';
+        list.appendChild(hint);
+        return;
+      }
+
+      items.forEach(task => {
+        const card = document.createElement('div');
+        card.className = 'task-card';
+
+        const nama = document.createElement('div');
+        nama.className = 'nama';
+        nama.textContent = task.nama;
+
+        const pj = document.createElement('div');
+        pj.className = 'pj';
+        pj.textContent = task.penanggungJawab;
+
+        const select = document.createElement('select');
+        STATUSES.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s;
+          opt.textContent = s;
+          if (s === task.status) opt.selected = true;
+          select.appendChild(opt);
+        });
+        select.addEventListener('change', () => {
+          task.status = select.value;
+          saveTasks(tasks);
+          render();
+        });
+
+        card.appendChild(nama);
+        card.appendChild(pj);
+        card.appendChild(select);
+        list.appendChild(card);
+      });
+    });
+  }
+
+  document.getElementById('task-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const namaInput = document.getElementById('nama-tugas');
+    const pjInput = document.getElementById('penanggung-jawab');
+    const statusInput = document.getElementById('status-awal');
+
+    tasks.push({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+      nama: namaInput.value.trim(),
+      penanggungJawab: pjInput.value.trim(),
+      status: statusInput.value
+    });
+
+    saveTasks(tasks);
+    render();
+
+    namaInput.value = '';
+    pjInput.value = '';
+    statusInput.value = 'Belum Mulai';
+    namaInput.focus();
+  });
+
+  render();
+</script>
+</body>
+</html>

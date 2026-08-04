@@ -1,0 +1,27 @@
+# Papan Koordinasi Tim
+
+Aplikasi web sederhana untuk tim kecil yang selama ini koordinasi tugas lewat WhatsApp. Semua orang bisa langsung lihat siapa mengerjakan apa tanpa scroll chat.
+
+## Fitur
+
+- Tambah tugas: nama tugas, penanggung jawab, dan status
+- Ubah status tugas antara **Belum Mulai**, **Dikerjakan**, dan **Selesai**
+- Semua tugas tampil dalam satu layar, dikelompokkan per status
+
+## Cara Pakai
+
+Buka `index.html` langsung di browser (double click, atau lewat live server jika ada). Tidak perlu instalasi atau server tambahan.
+
+Data tugas disimpan di `localStorage` browser masing-masing perangkat — artinya data tidak otomatis tersinkron antar pengguna atau perangkat berbeda, dan akan hilang jika cache/local storage browser dibersihkan.
+
+## Teknologi
+
+Satu halaman `index.html` berisi HTML, CSS, dan JavaScript biasa, tanpa framework atau dependency eksternal.
+
+## Deploy ke Vercel
+
+1. Push repo ini ke GitHub.
+2. Buka [vercel.com](https://vercel.com), klik **Add New → Project**.
+3. Pilih repo ini, klik **Import**.
+4. Biarkan pengaturan default (situs statis), klik **Deploy**.
+5. Setelah build selesai (~1 menit), aplikasi live di `namaproyek.vercel.app`.
