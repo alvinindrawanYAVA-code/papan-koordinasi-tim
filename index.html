@@ -58,7 +58,7 @@
 
   form#task-form {
     display: grid;
-    grid-template-columns: 1.6fr 1.3fr 1.1fr 1.6fr auto;
+    grid-template-columns: 2fr 1.5fr 1.3fr auto;
     gap: 12px;
     margin-bottom: 28px;
   }
@@ -235,12 +235,7 @@
           <select id="status-awal">
             <option value="Belum Mulai">Belum Mulai</option>
             <option value="Dikerjakan">Dikerjakan</option>
-            <option value="Selesai">Selesai</option>
           </select>
-        </div>
-        <div>
-          <label for="bukti-awal">Link Bukti (wajib jika Selesai)</label>
-          <input type="url" id="bukti-awal" placeholder="Link Google Drive/foto/dokumen">
         </div>
         <button type="submit">Tambah Tugas</button>
       </form>
@@ -363,27 +358,18 @@
     });
   }
 
-  const buktiAwalInput = document.getElementById('bukti-awal');
-  buktiAwalInput.addEventListener('input', () => buktiAwalInput.setCustomValidity(''));
-
   document.getElementById('task-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const namaInput = document.getElementById('nama-tugas');
     const pjInput = document.getElementById('penanggung-jawab');
     const statusInput = document.getElementById('status-awal');
 
-    if (statusInput.value === 'Selesai' && !buktiAwalInput.value.trim()) {
-      buktiAwalInput.setCustomValidity(BUKTI_WAJIB_MSG);
-      buktiAwalInput.reportValidity();
-      return;
-    }
-
     tasks.push({
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
       nama: namaInput.value.trim(),
       penanggungJawab: pjInput.value.trim(),
       status: statusInput.value,
-      bukti: buktiAwalInput.value.trim() || null
+      bukti: null
     });
 
     saveTasks(tasks);
@@ -392,7 +378,6 @@
     namaInput.value = '';
     pjInput.value = '';
     statusInput.value = 'Belum Mulai';
-    buktiAwalInput.value = '';
     namaInput.focus();
   });
 

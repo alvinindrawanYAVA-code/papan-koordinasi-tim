@@ -4,10 +4,10 @@ Aplikasi web sederhana untuk tim kecil yang selama ini koordinasi tugas lewat Wh
 
 ## Fitur
 
-- Tambah tugas: nama tugas, penanggung jawab, dan status
+- Tambah tugas: nama tugas, penanggung jawab, dan status awal (Belum Mulai/Dikerjakan)
 - Ubah status tugas antara **Belum Mulai**, **Dikerjakan**, dan **Selesai**
 - Semua tugas tampil dalam satu layar, dikelompokkan per status
-- Saat tugas ditandai **Selesai**, wajib isi link bukti kerja (mis. link Google Drive/foto/dokumen yang sudah diupload ke tempat lain) sebagai bukti tugas benar-benar sudah dikerjakan
+- Saat tugas ditandai **Selesai** (lewat dropdown status pada tugasnya), wajib isi link bukti kerja (mis. link Google Drive/foto/dokumen yang sudah diupload ke tempat lain) sebagai bukti tugas benar-benar sudah dikerjakan
 
 ## Cara Pakai
 
