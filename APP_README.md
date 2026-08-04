@@ -7,12 +7,13 @@ Aplikasi web sederhana untuk tim kecil yang selama ini koordinasi tugas lewat Wh
 - Tambah tugas: nama tugas, penanggung jawab, dan status
 - Ubah status tugas antara **Belum Mulai**, **Dikerjakan**, dan **Selesai**
 - Semua tugas tampil dalam satu layar, dikelompokkan per status
+- Saat tugas ditandai **Selesai**, wajib isi link bukti kerja (mis. link Google Drive/foto/dokumen yang sudah diupload ke tempat lain) sebagai bukti tugas benar-benar sudah dikerjakan
 
 ## Cara Pakai
 
 Buka `index.html` langsung di browser (double click, atau lewat live server jika ada). Tidak perlu instalasi atau server tambahan.
 
-Data tugas disimpan di `localStorage` browser masing-masing perangkat — artinya data tidak otomatis tersinkron antar pengguna atau perangkat berbeda, dan akan hilang jika cache/local storage browser dibersihkan.
+Data tugas disimpan di `localStorage` browser masing-masing perangkat — artinya data tidak otomatis tersinkron antar pengguna atau perangkat berbeda, dan akan hilang jika cache/local storage browser dibersihkan. Bukti kerja disimpan sebagai **link/URL saja** (bukan file), supaya tidak membebani kuota penyimpanan browser — file buktinya sendiri perlu diupload dulu ke tempat lain (Google Drive, WhatsApp, dll) baru link-nya ditempel di sini.
 
 ## Teknologi
 

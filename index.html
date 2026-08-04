@@ -58,7 +58,7 @@
 
   form#task-form {
     display: grid;
-    grid-template-columns: 2fr 1.5fr 1.3fr auto;
+    grid-template-columns: 1.6fr 1.3fr 1.1fr 1.6fr auto;
     gap: 12px;
     margin-bottom: 28px;
   }
@@ -169,7 +169,8 @@
     margin-bottom: 8px;
   }
 
-  .task-card select {
+  .task-card select,
+  .task-card .bukti-input {
     width: 100%;
     padding: 6px 8px;
     border-radius: 8px;
@@ -179,10 +180,27 @@
     color: var(--text);
   }
 
+  .task-card .bukti-input {
+    margin-top: 6px;
+  }
+
   .empty-hint {
     color: var(--text-muted);
     font-size: 0.85rem;
     margin-top: 12px;
+  }
+
+  .bukti-link {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 0.8rem;
+    color: var(--accent);
+    text-decoration: none;
+    word-break: break-all;
+  }
+
+  .bukti-link:hover {
+    text-decoration: underline;
   }
 
   @media (max-width: 720px) {
@@ -220,6 +238,10 @@
             <option value="Selesai">Selesai</option>
           </select>
         </div>
+        <div>
+          <label for="bukti-awal">Link Bukti (wajib jika Selesai)</label>
+          <input type="url" id="bukti-awal" placeholder="Link Google Drive/foto/dokumen">
+        </div>
         <button type="submit">Tambah Tugas</button>
       </form>
     </div>
@@ -243,6 +265,7 @@
 <script>
   const STORAGE_KEY = 'papan-koordinasi-tugas';
   const STATUSES = ['Belum Mulai', 'Dikerjakan', 'Selesai'];
+  const BUKTI_WAJIB_MSG = 'Isi link bukti kerja dulu sebelum menandai Selesai.';
 
   function loadTasks() {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -292,8 +315,30 @@
           if (s === task.status) opt.selected = true;
           select.appendChild(opt);
         });
+
+        const buktiInput = document.createElement('input');
+        buktiInput.type = 'url';
+        buktiInput.className = 'bukti-input';
+        buktiInput.placeholder = 'Link bukti kerja (wajib jika Selesai)';
+        buktiInput.value = task.bukti || '';
+        buktiInput.addEventListener('input', () => buktiInput.setCustomValidity(''));
+        buktiInput.addEventListener('change', () => {
+          task.bukti = buktiInput.value.trim() || null;
+          saveTasks(tasks);
+          render();
+        });
+
         select.addEventListener('change', () => {
-          task.status = select.value;
+          const newStatus = select.value;
+          if (newStatus === 'Selesai' && !buktiInput.value.trim()) {
+            select.value = task.status;
+            buktiInput.setCustomValidity(BUKTI_WAJIB_MSG);
+            buktiInput.reportValidity();
+            buktiInput.focus();
+            return;
+          }
+          task.status = newStatus;
+          task.bukti = buktiInput.value.trim() || null;
           saveTasks(tasks);
           render();
         });
@@ -301,10 +346,25 @@
         card.appendChild(nama);
         card.appendChild(pj);
         card.appendChild(select);
+        card.appendChild(buktiInput);
+
+        if (task.bukti) {
+          const link = document.createElement('a');
+          link.href = task.bukti;
+          link.target = '_blank';
+          link.rel = 'noopener';
+          link.className = 'bukti-link';
+          link.textContent = '🔗 Lihat Bukti';
+          card.appendChild(link);
+        }
+
         list.appendChild(card);
       });
     });
   }
+
+  const buktiAwalInput = document.getElementById('bukti-awal');
+  buktiAwalInput.addEventListener('input', () => buktiAwalInput.setCustomValidity(''));
 
   document.getElementById('task-form').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -312,11 +372,18 @@
     const pjInput = document.getElementById('penanggung-jawab');
     const statusInput = document.getElementById('status-awal');
 
+    if (statusInput.value === 'Selesai' && !buktiAwalInput.value.trim()) {
+      buktiAwalInput.setCustomValidity(BUKTI_WAJIB_MSG);
+      buktiAwalInput.reportValidity();
+      return;
+    }
+
     tasks.push({
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
       nama: namaInput.value.trim(),
       penanggungJawab: pjInput.value.trim(),
-      status: statusInput.value
+      status: statusInput.value,
+      bukti: buktiAwalInput.value.trim() || null
     });
 
     saveTasks(tasks);
@@ -325,6 +392,7 @@
     namaInput.value = '';
     pjInput.value = '';
     statusInput.value = 'Belum Mulai';
+    buktiAwalInput.value = '';
     namaInput.focus();
   });
 
