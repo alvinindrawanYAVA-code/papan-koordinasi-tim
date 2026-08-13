@@ -410,6 +410,7 @@
   <div id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script>
     const EMAILJS_CONFIG = {
       publicKey: '77p1yUkE6s_-UTuR9',
@@ -425,32 +426,14 @@
       emailjs.init({ publicKey: EMAILJS_CONFIG.publicKey });
     }
 
-    const TASK_KEY = 'papan-koordinasi-tugas';
-    const ANGGOTA_KEY = 'papan-koordinasi-anggota';
+    const SUPABASE_CONFIG = {
+      url: 'https://rqotdhrptadhsuvjhcoa.supabase.co',
+      publishableKey: 'sb_publishable_Q1hON_I7SR9Sj_pV8-E0wQ_ksmEBdaS'
+    };
+    const db = supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.publishableKey);
+
     const STATUSES = ['Belum Mulai', 'Dikerjakan', 'Selesai'];
     const BUKTI_WAJIB_MSG = 'Isi link bukti kerja dulu sebelum menandai Selesai.';
-
-    function loadTasks() {
-      const raw = localStorage.getItem(TASK_KEY);
-      return raw ? JSON.parse(raw) : [];
-    }
-
-    function saveTasks(list) {
-      localStorage.setItem(TASK_KEY, JSON.stringify(list));
-    }
-
-    function loadAnggota() {
-      const raw = localStorage.getItem(ANGGOTA_KEY);
-      return raw ? JSON.parse(raw) : [];
-    }
-
-    function saveAnggota(list) {
-      localStorage.setItem(ANGGOTA_KEY, JSON.stringify(list));
-    }
-
-    function genId() {
-      return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-    }
 
     function formatTanggal(isoDate) {
       if (!isoDate) return '';
@@ -458,8 +441,8 @@
       return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
     }
 
-    let tasks = loadTasks();
-    let anggotaList = loadAnggota();
+    let tasks = [];
+    let anggotaList = [];
 
     let toastTimer;
     function showToast(msg, ms = 4000) {
@@ -468,6 +451,28 @@
       el.classList.add('show');
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => el.classList.remove('show'), ms);
+    }
+
+    async function fetchAnggota() {
+      const { data, error } = await db.from('anggota').select('*').order('created_at', { ascending: true });
+      if (error) {
+        console.error('Gagal memuat anggota:', error);
+        showToast('Gagal memuat data anggota tim.');
+        return;
+      }
+      anggotaList = data || [];
+      renderAnggota();
+    }
+
+    async function fetchTasks() {
+      const { data, error } = await db.from('tugas').select('*').order('dibuat_pada', { ascending: true });
+      if (error) {
+        console.error('Gagal memuat tugas:', error);
+        showToast('Gagal memuat data tugas.');
+        return;
+      }
+      tasks = data || [];
+      render();
     }
 
     // --- Anggota Tim ---
@@ -497,10 +502,14 @@
           removeBtn.type = 'button';
           removeBtn.textContent = '✕';
           removeBtn.title = 'Hapus anggota';
-          removeBtn.addEventListener('click', () => {
-            anggotaList = anggotaList.filter(x => x.id !== a.id);
-            saveAnggota(anggotaList);
-            renderAnggota();
+          removeBtn.addEventListener('click', async () => {
+            const { error } = await db.from('anggota').delete().eq('id', a.id);
+            if (error) {
+              console.error('Gagal hapus anggota:', error);
+              showToast('Gagal hapus anggota.');
+              return;
+            }
+            await fetchAnggota();
           });
 
           chip.appendChild(label);
@@ -533,22 +542,25 @@
       document.getElementById('pj-hint').hidden = anggotaList.length > 0;
     }
 
-    document.getElementById('anggota-form').addEventListener('submit', (e) => {
+    document.getElementById('anggota-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const namaInput = document.getElementById('anggota-nama');
       const emailInput = document.getElementById('anggota-email');
 
-      anggotaList.push({
-        id: genId(),
+      const { error } = await db.from('anggota').insert({
         nama: namaInput.value.trim(),
         email: emailInput.value.trim()
       });
-      saveAnggota(anggotaList);
-      renderAnggota();
+      if (error) {
+        console.error('Gagal tambah anggota:', error);
+        showToast('Gagal menambah anggota.');
+        return;
+      }
 
       namaInput.value = '';
       emailInput.value = '';
       namaInput.focus();
+      await fetchAnggota();
     });
 
     // --- Tugas ---
@@ -580,16 +592,16 @@
 
           const pj = document.createElement('div');
           pj.className = 'pj';
-          pj.textContent = task.penanggungJawab;
+          pj.textContent = task.penanggung_jawab;
 
           const pembuat = document.createElement('div');
           pembuat.className = 'pembuat';
-          if (task.dibuatOleh) pembuat.textContent = `Ditambahkan oleh: ${task.dibuatOleh}`;
+          if (task.dibuat_oleh) pembuat.textContent = `Ditambahkan oleh: ${task.dibuat_oleh}`;
 
           const timeline = document.createElement('div');
           timeline.className = 'timeline';
-          timeline.textContent = (task.tanggalMulai && task.tanggalSelesai)
-            ? `📅 ${formatTanggal(task.tanggalMulai)} – ${formatTanggal(task.tanggalSelesai)}`
+          timeline.textContent = (task.tanggal_mulai && task.tanggal_selesai)
+            ? `📅 ${formatTanggal(task.tanggal_mulai)} – ${formatTanggal(task.tanggal_selesai)}`
             : 'Periode belum diisi (tugas lama)';
 
           const select = document.createElement('select');
@@ -607,13 +619,17 @@
           buktiInput.placeholder = 'Link bukti kerja (wajib jika Selesai)';
           buktiInput.value = task.bukti || '';
           buktiInput.addEventListener('input', () => buktiInput.setCustomValidity(''));
-          buktiInput.addEventListener('change', () => {
-            task.bukti = buktiInput.value.trim() || null;
-            saveTasks(tasks);
-            render();
+          buktiInput.addEventListener('change', async () => {
+            const { error } = await db.from('tugas').update({ bukti: buktiInput.value.trim() || null }).eq('id', task.id);
+            if (error) {
+              console.error('Gagal simpan bukti:', error);
+              showToast('Gagal simpan link bukti.');
+              return;
+            }
+            await fetchTasks();
           });
 
-          select.addEventListener('change', () => {
+          select.addEventListener('change', async () => {
             const newStatus = select.value;
             if (newStatus === 'Selesai' && !buktiInput.value.trim()) {
               select.value = task.status;
@@ -622,15 +638,20 @@
               buktiInput.focus();
               return;
             }
-            task.status = newStatus;
-            task.bukti = buktiInput.value.trim() || null;
-            saveTasks(tasks);
-            render();
+            const { error } = await db.from('tugas')
+              .update({ status: newStatus, bukti: buktiInput.value.trim() || null })
+              .eq('id', task.id);
+            if (error) {
+              console.error('Gagal update status:', error);
+              showToast('Gagal update status tugas.');
+              return;
+            }
+            await fetchTasks();
           });
 
           card.appendChild(nama);
           card.appendChild(pj);
-          if (task.dibuatOleh) card.appendChild(pembuat);
+          if (task.dibuat_oleh) card.appendChild(pembuat);
           card.appendChild(timeline);
           card.appendChild(select);
           card.appendChild(buktiInput);
@@ -645,12 +666,12 @@
             card.appendChild(link);
           }
 
-          if (task.notifStatus === 'terkirim') {
+          if (task.notif_status === 'terkirim') {
             const badge = document.createElement('span');
             badge.className = 'notif-status ok';
             badge.textContent = '✉️ Notifikasi terkirim ke PJ';
             card.appendChild(badge);
-          } else if (task.notifStatus === 'gagal') {
+          } else if (task.notif_status === 'gagal') {
             const badge = document.createElement('span');
             badge.className = 'notif-status gagal';
             badge.textContent = '⚠️ Notifikasi email gagal terkirim';
@@ -667,26 +688,27 @@
         console.info('EmailJS belum dikonfigurasi, notifikasi email dilewati. Lihat README bagian "Setup Notifikasi Email".');
         return;
       }
+      let notifStatus;
       try {
         await emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, {
-          to_email: task.penanggungJawabEmail,
-          to_name: task.penanggungJawab,
+          to_email: task.penanggung_jawab_email,
+          to_name: task.penanggung_jawab,
           task_name: task.nama,
-          task_creator: task.dibuatOleh,
+          task_creator: task.dibuat_oleh,
           task_status: task.status,
-          task_start: formatTanggal(task.tanggalMulai),
-          task_end: formatTanggal(task.tanggalSelesai),
-          created_at: formatTanggal(task.dibuatPada.slice(0, 10))
+          task_start: formatTanggal(task.tanggal_mulai),
+          task_end: formatTanggal(task.tanggal_selesai),
+          created_at: formatTanggal(task.dibuat_pada.slice(0, 10))
         });
-        task.notifStatus = 'terkirim';
-        showToast(`Tugas ditambahkan & notifikasi email terkirim ke ${task.penanggungJawab}.`);
+        notifStatus = 'terkirim';
+        showToast(`Notifikasi email terkirim ke ${task.penanggung_jawab}.`);
       } catch (err) {
         console.error('Gagal kirim notifikasi email:', err);
-        task.notifStatus = 'gagal';
-        showToast('Tugas ditambahkan, tapi notifikasi email gagal terkirim.');
+        notifStatus = 'gagal';
+        showToast('Notifikasi email gagal terkirim.');
       }
-      saveTasks(tasks);
-      render();
+      await db.from('tugas').update({ notif_status: notifStatus }).eq('id', task.id);
+      await fetchTasks();
     }
 
     document.getElementById('tanggal-mulai').addEventListener('input', () => {
@@ -696,7 +718,7 @@
       document.getElementById('tanggal-selesai').setCustomValidity('');
     });
 
-    document.getElementById('task-form').addEventListener('submit', (e) => {
+    document.getElementById('task-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const namaInput = document.getElementById('nama-tugas');
       const pjSelect = document.getElementById('penanggung-jawab');
@@ -716,24 +738,26 @@
       const creator = anggotaList.find(a => a.id === dibuatOlehSelect.value);
       if (!member || !creator) return;
 
-      const task = {
-        id: genId(),
+      const { data: newTask, error } = await db.from('tugas').insert({
         nama: namaInput.value.trim(),
-        penanggungJawab: member.nama,
-        penanggungJawabEmail: member.email,
-        dibuatOleh: creator.nama,
+        penanggung_jawab: member.nama,
+        penanggung_jawab_email: member.email,
+        dibuat_oleh: creator.nama,
         status: statusInput.value,
         bukti: null,
-        tanggalMulai: mulaiInput.value,
-        tanggalSelesai: selesaiInput.value,
-        dibuatPada: new Date().toISOString(),
-        notifStatus: null
-      };
+        tanggal_mulai: mulaiInput.value,
+        tanggal_selesai: selesaiInput.value,
+        dibuat_pada: new Date().toISOString(),
+        notif_status: null
+      }).select().single();
 
-      tasks.push(task);
-      saveTasks(tasks);
-      render();
-      showToast(`Tugas "${task.nama}" ditambahkan. Mengirim notifikasi email…`);
+      if (error) {
+        console.error('Gagal tambah tugas:', error);
+        showToast('Gagal menambah tugas.');
+        return;
+      }
+
+      showToast(`Tugas "${newTask.nama}" ditambahkan. Mengirim notifikasi email…`);
 
       namaInput.value = '';
       pjSelect.value = '';
@@ -743,11 +767,17 @@
       statusInput.value = 'Belum Mulai';
       namaInput.focus();
 
-      sendTaskNotification(task);
+      await fetchTasks();
+      sendTaskNotification(newTask);
     });
 
-    renderAnggota();
-    render();
+    db.channel('papan-koordinasi-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tugas' }, () => fetchTasks())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'anggota' }, () => fetchAnggota())
+      .subscribe();
+
+    fetchAnggota();
+    fetchTasks();
   </script>
 </body>
 </html>
