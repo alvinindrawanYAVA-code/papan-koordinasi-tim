@@ -5,7 +5,7 @@ const { todayWita, diffDays, formatTanggal } = require('../../lib/time');
 const EMAILJS_RATE_LIMIT_MS = 1100; // EmailJS batasi 1 request/detik
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-function buildReminderParams(task, { headline, message }) {
+function buildReminderParams(task, { headline, message, accentColor }) {
   return {
     to_email: task.penanggung_jawab_email,
     to_name: task.penanggung_jawab,
@@ -16,6 +16,7 @@ function buildReminderParams(task, { headline, message }) {
     task_status: task.status,
     reminder_headline: headline,
     reminder_message: message,
+    accent_color: accentColor,
   };
 }
 
@@ -47,6 +48,7 @@ module.exports = async (req, res) => {
             templateParams: buildReminderParams(task, {
               headline: 'Tugas jatuh tempo 2 hari lagi',
               message,
+              accentColor: '#f59e0b',
             }),
           });
           await sbUpdate('tugas', { id: `eq.${task.id}` }, { reminder_h2_sent_at: new Date().toISOString() });
@@ -71,6 +73,7 @@ module.exports = async (req, res) => {
             templateParams: buildReminderParams(task, {
               headline: 'Tugas sudah terlambat',
               message,
+              accentColor: '#dc2626',
             }),
           });
           await sbUpdate('tugas', { id: `eq.${task.id}` }, { reminder_overdue_last_sent_on: today });

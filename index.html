@@ -17,6 +17,10 @@
     --dikerjakan: #f59e0b;
     --selesai: #16a34a;
     --danger: #dc2626;
+    --belum-soft: #f3f4f6;
+    --dikerjakan-soft: #fef3c7;
+    --selesai-soft: #dcfce7;
+    --shadow: 0 4px 20px rgba(31, 36, 48, 0.08);
   }
 
   * { box-sizing: border-box; }
@@ -52,8 +56,8 @@
 
   .card-panel {
     background: var(--surface);
-    border: 1px solid var(--border);
     border-radius: 16px;
+    box-shadow: var(--shadow);
     padding: 20px;
     margin-bottom: 20px;
   }
@@ -158,10 +162,25 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    background: var(--accent-soft);
+    background: var(--surface);
     border-radius: 999px;
-    padding: 6px 8px 6px 14px;
+    box-shadow: var(--shadow);
+    padding: 6px 12px 6px 6px;
     font-size: 0.85rem;
+  }
+
+  .anggota-chip .avatar {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .anggota-chip .email {
@@ -214,8 +233,8 @@
 
   .column {
     background: var(--surface);
-    border: 1px solid var(--border);
     border-radius: 16px;
+    box-shadow: var(--shadow);
     padding: 16px;
     min-height: 120px;
   }
@@ -253,15 +272,54 @@
   }
 
   .task-card {
-    background: var(--accent-soft);
-    border-radius: 12px;
+    display: flex;
+    align-items: stretch;
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .task-card-accent {
+    width: 5px;
+    flex-shrink: 0;
+  }
+
+  .task-card.status-belum .task-card-accent { background: var(--belum); }
+  .task-card.status-dikerjakan .task-card-accent { background: var(--dikerjakan); }
+  .task-card.status-selesai .task-card-accent { background: var(--selesai); }
+
+  .task-card-body {
+    flex: 1;
+    min-width: 0;
     padding: 12px 14px;
   }
+
+  .task-card-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .status-icon {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+  }
+
+  .task-card.status-belum .status-icon { background: var(--belum-soft); }
+  .task-card.status-dikerjakan .status-icon { background: var(--dikerjakan-soft); }
+  .task-card.status-selesai .status-icon { background: var(--selesai-soft); }
 
   .task-card .nama {
     font-weight: 600;
     font-size: 0.95rem;
-    margin-bottom: 2px;
   }
 
   .task-card .pj {
@@ -323,24 +381,18 @@
     text-decoration: underline;
   }
 
-  .notif-status {
-    display: block;
-    margin-top: 6px;
-    font-size: 0.75rem;
-  }
-
-  .notif-status.ok { color: var(--selesai); }
-  .notif-status.gagal { color: var(--danger); }
-
+  .notif-status,
   .calendar-status {
-    display: block;
-    margin-top: 4px;
-    font-size: 0.75rem;
+    display: inline-block;
+    margin-top: 6px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.72rem;
   }
 
-  .calendar-status.ok { color: var(--selesai); }
-  .calendar-status.gagal { color: var(--danger); }
-  .calendar-status.info { color: var(--text-muted); }
+  .notif-status.ok, .calendar-status.ok { background: var(--selesai-soft); color: var(--selesai); }
+  .notif-status.gagal, .calendar-status.gagal { background: #fee2e2; color: var(--danger); }
+  .calendar-status.info { background: var(--border); color: var(--text-muted); }
 
   #toast {
     position: fixed;
@@ -500,6 +552,9 @@
     let tasks = [];
     let anggotaList = [];
 
+    const STATUS_CLASS = { 'Belum Mulai': 'status-belum', 'Dikerjakan': 'status-dikerjakan', 'Selesai': 'status-selesai' };
+    const STATUS_ICON = { 'Belum Mulai': '🕓', 'Dikerjakan': '⚙️', 'Selesai': '✅' };
+
     let toastTimer;
     function showToast(msg, ms = 4000) {
       const el = document.getElementById('toast');
@@ -546,6 +601,10 @@
         anggotaList.forEach(a => {
           const chip = document.createElement('div');
           chip.className = 'anggota-chip';
+
+          const avatar = document.createElement('span');
+          avatar.className = 'avatar';
+          avatar.textContent = (a.nama || '?').trim().charAt(0).toUpperCase();
 
           const label = document.createElement('span');
           label.textContent = a.nama;
@@ -601,6 +660,7 @@
             await fetchAnggota();
           });
 
+          chip.appendChild(avatar);
           chip.appendChild(label);
           chip.appendChild(email);
           chip.appendChild(googleEl);
@@ -674,7 +734,20 @@
 
         items.forEach(task => {
           const card = document.createElement('div');
-          card.className = 'task-card';
+          card.className = `task-card ${STATUS_CLASS[task.status] || ''}`;
+
+          const accent = document.createElement('div');
+          accent.className = 'task-card-accent';
+
+          const body = document.createElement('div');
+          body.className = 'task-card-body';
+
+          const head = document.createElement('div');
+          head.className = 'task-card-head';
+
+          const statusIcon = document.createElement('span');
+          statusIcon.className = 'status-icon';
+          statusIcon.textContent = STATUS_ICON[task.status] || '🕓';
 
           const nama = document.createElement('div');
           nama.className = 'nama';
@@ -743,13 +816,15 @@
             await fetchTasks();
           });
 
-          card.appendChild(nama);
-          card.appendChild(pj);
-          if (task.dibuat_oleh) card.appendChild(pembuat);
-          card.appendChild(timeline);
-          if (task.deskripsi) card.appendChild(deskripsi);
-          card.appendChild(select);
-          card.appendChild(buktiInput);
+          head.appendChild(statusIcon);
+          head.appendChild(nama);
+          body.appendChild(head);
+          body.appendChild(pj);
+          if (task.dibuat_oleh) body.appendChild(pembuat);
+          body.appendChild(timeline);
+          if (task.deskripsi) body.appendChild(deskripsi);
+          body.appendChild(select);
+          body.appendChild(buktiInput);
 
           if (task.bukti) {
             const link = document.createElement('a');
@@ -758,38 +833,40 @@
             link.rel = 'noopener';
             link.className = 'bukti-link';
             link.textContent = '🔗 Lihat Bukti';
-            card.appendChild(link);
+            body.appendChild(link);
           }
 
           if (task.notif_status === 'terkirim') {
             const badge = document.createElement('span');
             badge.className = 'notif-status ok';
             badge.textContent = '✉️ Notifikasi terkirim ke PJ';
-            card.appendChild(badge);
+            body.appendChild(badge);
           } else if (task.notif_status === 'gagal') {
             const badge = document.createElement('span');
             badge.className = 'notif-status gagal';
             badge.textContent = '⚠️ Notifikasi email gagal terkirim';
-            card.appendChild(badge);
+            body.appendChild(badge);
           }
 
           if (task.calendar_status === 'created') {
             const calBadge = document.createElement('span');
             calBadge.className = 'calendar-status ok';
             calBadge.textContent = '📅 Ditambahkan ke Google Calendar PJ';
-            card.appendChild(calBadge);
+            body.appendChild(calBadge);
           } else if (task.calendar_status === 'failed') {
             const calBadge = document.createElement('span');
             calBadge.className = 'calendar-status gagal';
             calBadge.textContent = '⚠️ Gagal menambahkan ke Google Calendar';
-            card.appendChild(calBadge);
+            body.appendChild(calBadge);
           } else if (task.calendar_status === 'skipped_not_connected') {
             const calBadge = document.createElement('span');
             calBadge.className = 'calendar-status info';
             calBadge.textContent = 'PJ belum menghubungkan Google Calendar';
-            card.appendChild(calBadge);
+            body.appendChild(calBadge);
           }
 
+          card.appendChild(accent);
+          card.appendChild(body);
           list.appendChild(card);
         });
       });
