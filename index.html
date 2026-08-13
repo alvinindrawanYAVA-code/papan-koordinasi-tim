@@ -82,6 +82,10 @@
     flex: 1 1 150px;
   }
 
+  form#task-form .field-wide {
+    flex: 1 1 100%;
+  }
+
   form#task-form label,
   form#anggota-form label {
     display: block;
@@ -92,18 +96,25 @@
 
   form#task-form input,
   form#task-form select,
+  form#task-form textarea,
   form#anggota-form input {
     width: 100%;
     padding: 10px 12px;
     border: 1px solid var(--border);
     border-radius: 10px;
     font-size: 0.95rem;
+    font-family: inherit;
     background: var(--bg);
     color: var(--text);
   }
 
+  form#task-form textarea {
+    resize: vertical;
+  }
+
   form#task-form input:focus,
   form#task-form select:focus,
+  form#task-form textarea:focus,
   form#anggota-form input:focus {
     outline: none;
     border-color: var(--accent);
@@ -169,6 +180,30 @@
 
   .anggota-chip button:hover {
     color: var(--danger);
+  }
+
+  .anggota-chip a.google-connect,
+  .anggota-chip button.google-disconnect {
+    font-size: 0.75rem;
+    text-decoration: none;
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 0;
+    white-space: nowrap;
+  }
+
+  .anggota-chip a.google-connect {
+    color: var(--accent);
+  }
+
+  .anggota-chip button.google-disconnect {
+    color: var(--selesai);
+  }
+
+  .anggota-chip a.google-connect:hover,
+  .anggota-chip button.google-disconnect:hover {
+    text-decoration: underline;
   }
 
   .board {
@@ -247,6 +282,13 @@
     margin-bottom: 8px;
   }
 
+  .task-card .deskripsi {
+    font-size: 0.85rem;
+    color: var(--text);
+    margin-bottom: 8px;
+    white-space: pre-wrap;
+  }
+
   .task-card select,
   .task-card .bukti-input {
     width: 100%;
@@ -289,6 +331,16 @@
 
   .notif-status.ok { color: var(--selesai); }
   .notif-status.gagal { color: var(--danger); }
+
+  .calendar-status {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.75rem;
+  }
+
+  .calendar-status.ok { color: var(--selesai); }
+  .calendar-status.gagal { color: var(--danger); }
+  .calendar-status.info { color: var(--text-muted); }
 
   #toast {
     position: fixed;
@@ -358,6 +410,10 @@
         <div class="field">
           <label for="nama-tugas">Nama Tugas</label>
           <input type="text" id="nama-tugas" placeholder="Contoh: Siapkan materi presentasi" required>
+        </div>
+        <div class="field field-wide">
+          <label for="deskripsi-tugas">Deskripsi (opsional)</label>
+          <textarea id="deskripsi-tugas" rows="2" placeholder="Detail tambahan, instruksi khusus, dll (opsional)"></textarea>
         </div>
         <div class="field">
           <label for="penanggung-jawab">Penanggung Jawab</label>
@@ -498,6 +554,39 @@
           email.className = 'email';
           email.textContent = a.email;
 
+          let googleEl;
+          if (a.google_connected) {
+            googleEl = document.createElement('button');
+            googleEl.type = 'button';
+            googleEl.className = 'google-disconnect';
+            googleEl.textContent = '📅 Terhubung · Putuskan';
+            googleEl.title = 'Putuskan koneksi Google Calendar';
+            googleEl.addEventListener('click', async () => {
+              googleEl.disabled = true;
+              try {
+                const res = await fetch('/api/google/disconnect', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ anggotaId: a.id })
+                });
+                if (!res.ok) throw new Error('Gagal memutuskan koneksi');
+                showToast(`Koneksi Google Calendar ${a.nama} diputuskan.`);
+                await fetchAnggota();
+              } catch (err) {
+                console.error('Gagal putuskan koneksi Google:', err);
+                showToast('Gagal memutuskan koneksi Google Calendar.');
+                googleEl.disabled = false;
+              }
+            });
+          } else {
+            googleEl = document.createElement('a');
+            googleEl.href = `/api/google/connect?anggotaId=${a.id}`;
+            googleEl.target = '_blank';
+            googleEl.rel = 'noopener';
+            googleEl.className = 'google-connect';
+            googleEl.textContent = '📅 Hubungkan Google Calendar';
+          }
+
           const removeBtn = document.createElement('button');
           removeBtn.type = 'button';
           removeBtn.textContent = '✕';
@@ -514,6 +603,7 @@
 
           chip.appendChild(label);
           chip.appendChild(email);
+          chip.appendChild(googleEl);
           chip.appendChild(removeBtn);
           list.appendChild(chip);
         });
@@ -604,6 +694,10 @@
             ? `📅 ${formatTanggal(task.tanggal_mulai)} – ${formatTanggal(task.tanggal_selesai)}`
             : 'Periode belum diisi (tugas lama)';
 
+          const deskripsi = document.createElement('div');
+          deskripsi.className = 'deskripsi';
+          if (task.deskripsi) deskripsi.textContent = task.deskripsi;
+
           const select = document.createElement('select');
           STATUSES.forEach(s => {
             const opt = document.createElement('option');
@@ -653,6 +747,7 @@
           card.appendChild(pj);
           if (task.dibuat_oleh) card.appendChild(pembuat);
           card.appendChild(timeline);
+          if (task.deskripsi) card.appendChild(deskripsi);
           card.appendChild(select);
           card.appendChild(buktiInput);
 
@@ -678,6 +773,23 @@
             card.appendChild(badge);
           }
 
+          if (task.calendar_status === 'created') {
+            const calBadge = document.createElement('span');
+            calBadge.className = 'calendar-status ok';
+            calBadge.textContent = '📅 Ditambahkan ke Google Calendar PJ';
+            card.appendChild(calBadge);
+          } else if (task.calendar_status === 'failed') {
+            const calBadge = document.createElement('span');
+            calBadge.className = 'calendar-status gagal';
+            calBadge.textContent = '⚠️ Gagal menambahkan ke Google Calendar';
+            card.appendChild(calBadge);
+          } else if (task.calendar_status === 'skipped_not_connected') {
+            const calBadge = document.createElement('span');
+            calBadge.className = 'calendar-status info';
+            calBadge.textContent = 'PJ belum menghubungkan Google Calendar';
+            card.appendChild(calBadge);
+          }
+
           list.appendChild(card);
         });
       });
@@ -694,6 +806,7 @@
           to_email: task.penanggung_jawab_email,
           to_name: task.penanggung_jawab,
           task_name: task.nama,
+          task_description: task.deskripsi || '-',
           task_creator: task.dibuat_oleh,
           task_status: task.status,
           task_start: formatTanggal(task.tanggal_mulai),
@@ -721,6 +834,7 @@
     document.getElementById('task-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const namaInput = document.getElementById('nama-tugas');
+      const deskripsiInput = document.getElementById('deskripsi-tugas');
       const pjSelect = document.getElementById('penanggung-jawab');
       const dibuatOlehSelect = document.getElementById('dibuat-oleh');
       const mulaiInput = document.getElementById('tanggal-mulai');
@@ -740,8 +854,10 @@
 
       const { data: newTask, error } = await db.from('tugas').insert({
         nama: namaInput.value.trim(),
+        deskripsi: deskripsiInput.value.trim() || null,
         penanggung_jawab: member.nama,
         penanggung_jawab_email: member.email,
+        penanggung_jawab_id: member.id,
         dibuat_oleh: creator.nama,
         status: statusInput.value,
         bukti: null,
@@ -760,6 +876,7 @@
       showToast(`Tugas "${newTask.nama}" ditambahkan. Mengirim notifikasi email…`);
 
       namaInput.value = '';
+      deskripsiInput.value = '';
       pjSelect.value = '';
       dibuatOlehSelect.value = '';
       mulaiInput.value = '';
@@ -769,12 +886,29 @@
 
       await fetchTasks();
       sendTaskNotification(newTask);
+      fetch('/api/google/create-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId: newTask.id })
+      })
+        .then(() => fetchTasks())
+        .catch(err => console.error('Gagal buat event Google Calendar:', err));
     });
 
     db.channel('papan-koordinasi-sync')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tugas' }, () => fetchTasks())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'anggota' }, () => fetchAnggota())
       .subscribe();
+
+    const googleParam = new URLSearchParams(location.search).get('google');
+    if (googleParam === 'connected') {
+      showToast('Google Calendar berhasil terhubung.');
+    } else if (googleParam === 'error') {
+      showToast('Gagal menghubungkan Google Calendar. Coba lagi.');
+    }
+    if (googleParam) {
+      history.replaceState(null, '', location.pathname);
+    }
 
     fetchAnggota();
     fetchTasks();

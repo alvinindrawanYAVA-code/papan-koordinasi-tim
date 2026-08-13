@@ -5,12 +5,14 @@ Aplikasi web sederhana untuk tim kecil yang selama ini koordinasi tugas lewat Wh
 ## Fitur
 
 - Kelola **Anggota Tim**: tambah/hapus nama + email anggota, jadi bisa dipilih sebagai penanggung jawab tugas
-- Tambah tugas: nama tugas, penanggung jawab (pilih dari Anggota Tim), **pembuat tugas (pilih dari Anggota Tim, untuk transparansi siapa yang assign)**, **periode pengerjaan (tanggal mulai & tanggal selesai, wajib diisi)**, dan status awal (Belum Mulai/Dikerjakan)
+- Tambah tugas: nama tugas, **deskripsi tambahan (opsional, untuk instruksi/detail lebih lengkap)**, penanggung jawab (pilih dari Anggota Tim), **pembuat tugas (pilih dari Anggota Tim, untuk transparansi siapa yang assign)**, **periode pengerjaan (tanggal mulai & tanggal selesai, wajib diisi)**, dan status awal (Belum Mulai/Dikerjakan)
 - Ubah status tugas antara **Belum Mulai**, **Dikerjakan**, dan **Selesai**
 - Semua tugas tampil dalam satu layar, dikelompokkan per status, lengkap dengan periode tanggal pengerjaannya
 - Saat tugas ditandai **Selesai** (lewat dropdown status pada tugasnya), wajib isi link bukti kerja (mis. link Google Drive/foto/dokumen yang sudah diupload ke tempat lain) sebagai bukti tugas benar-benar sudah dikerjakan
 - **Notifikasi email otomatis**: begitu tugas baru dibuat, email berisi rincian tugas (semacam tanda terima/receipt) otomatis dikirim ke alamat email penanggung jawab, lewat EmailJS (lihat setup di bawah)
 - **Data tersinkron real-time**: semua anggota tim melihat papan yang sama secara langsung — begitu satu orang tambah/ubah tugas, orang lain yang sedang membuka halaman langsung lihat perubahannya tanpa perlu refresh
+- **Auto-assign ke Google Calendar pribadi**: begitu tugas dibuat, otomatis muncul di kalender Google milik penanggung jawab (kalau sudah menghubungkan akun Google-nya lewat panel Anggota Tim — sekali connect, berlaku seterusnya)
+- **Pengingat deadline otomatis lewat email**: sekali di H-2 sebelum tenggat, lalu berulang tiap hari selama tugas overdue (belum ditandai Selesai) — jalan otomatis tiap hari tanpa perlu ada yang buka aplikasi (lihat setup di bawah)
 
 ## Cara Pakai
 
@@ -28,6 +30,7 @@ Notifikasi email **opsional** — kalau belum di-setup, aplikasi tetap jalan nor
 2. Di dashboard EmailJS, buka **Email Services** → **Add New Service** → pilih **Gmail**, lalu hubungkan/login dengan akun Gmail yang mau jadi pengirim. Catat **Service ID**-nya.
 3. Buka **Email Templates** → **Create New Template**. Isi subjek & isi email bebas, tapi gunakan variabel berikut supaya rincian tugas otomatis terisi (contoh isi template ada di bawah). Catat **Template ID**-nya.
    - Mau tampilan siap pakai bergaya "struk" (badge centang, kotak rincian tugas, tombol buka papan)? Buka editor template EmailJS, klik ikon **`<>` Code Editor**, lalu tempel isi file [`email-template.html`](./email-template.html) dari repo ini (ganti dulu URL di tombol "Buka Papan Koordinasi Tim" dengan link Vercel Anda).
+   - **Kalau template Anda sudah pernah dibuat sebelumnya** (sebelum field Deskripsi ini ada): tempel ulang isi `email-template.html` yang terbaru, atau cukup tambahkan sendiri baris `{{task_description}}` di template lama Anda supaya deskripsi tugas ikut muncul di email.
 4. Buka **Account** → **General**, catat **Public Key**-nya.
 5. Buka `index.html`, cari bagian `EMAILJS_CONFIG` di dalam tag `<script>` paling bawah, lalu ganti 3 nilainya:
    ```js
@@ -46,6 +49,7 @@ Notifikasi email **opsional** — kalau belum di-setup, aplikasi tetap jalan nor
 | `{{to_email}}` | Email penanggung jawab (tujuan email) |
 | `{{to_name}}` | Nama penanggung jawab |
 | `{{task_name}}` | Nama tugas |
+| `{{task_description}}` | Deskripsi/detail tambahan tugas (isi `-` kalau kosong) |
 | `{{task_creator}}` | Nama yang membuat/assign tugas |
 | `{{task_status}}` | Status awal tugas |
 | `{{task_start}}` | Tanggal mulai pengerjaan |
@@ -59,6 +63,7 @@ Subjek: Tugas Baru: {{task_name}}
 Halo {{to_name}},
 
 Kamu ditugaskan untuk: {{task_name}}
+Deskripsi: {{task_description}}
 Ditugaskan oleh: {{task_creator}}
 Periode pengerjaan: {{task_start}} – {{task_end}}
 Status saat ini: {{task_status}}
@@ -74,8 +79,8 @@ Aplikasi ini butuh 1 project Supabase (gratis) sebagai database bersama. Kalau m
 1. Daftar/login di [supabase.com](https://supabase.com), buat **New project** (catat nama, region terdekat misal Southeast Asia/Singapore).
 2. Buka **SQL Editor**, jalankan skrip untuk membuat tabel `anggota` dan `tugas` beserta kebijakan Row Level Security (akses baca/tulis terbuka, karena app belum punya sistem login):
    ```sql
-   create table anggota (id uuid primary key default gen_random_uuid(), nama text not null, email text not null, created_at timestamptz not null default now());
-   create table tugas (id uuid primary key default gen_random_uuid(), nama text not null, penanggung_jawab text not null, penanggung_jawab_email text not null, dibuat_oleh text not null, status text not null default 'Belum Mulai', bukti text, tanggal_mulai date not null, tanggal_selesai date not null, dibuat_pada timestamptz not null default now(), notif_status text);
+   create table anggota (id uuid primary key default gen_random_uuid(), nama text not null, email text not null, created_at timestamptz not null default now(), google_connected boolean not null default false, google_connected_at timestamptz);
+   create table tugas (id uuid primary key default gen_random_uuid(), nama text not null, deskripsi text, penanggung_jawab text not null, penanggung_jawab_email text not null, penanggung_jawab_id uuid references anggota(id) on delete set null, dibuat_oleh text not null, status text not null default 'Belum Mulai', bukti text, tanggal_mulai date not null, tanggal_selesai date not null, dibuat_pada timestamptz not null default now(), notif_status text, calendar_event_id text, calendar_status text, calendar_error text, reminder_h2_sent_at timestamptz, reminder_overdue_last_sent_on date);
    alter table anggota enable row level security;
    alter table tugas enable row level security;
    create policy "anggota_select" on anggota for select using (true);
@@ -86,7 +91,12 @@ Aplikasi ini butuh 1 project Supabase (gratis) sebagai database bersama. Kalau m
    create policy "tugas_update" on tugas for update using (true) with check (true);
    alter publication supabase_realtime add table tugas;
    alter publication supabase_realtime add table anggota;
+
+   create table google_tokens (id uuid primary key default gen_random_uuid(), anggota_id uuid not null unique references anggota(id) on delete cascade, access_token text not null, refresh_token text not null, expires_at timestamptz not null, status text not null default 'connected', last_error text, connected_at timestamptz not null default now(), updated_at timestamptz not null default now());
+   alter table google_tokens enable row level security;
    ```
+
+   `google_tokens` **sengaja tidak diberi kebijakan RLS apa pun** (default-deny) — tabel ini menyimpan token OAuth Google dan cuma boleh diakses lewat `service_role` key dari server function, tidak pernah lewat publishable key yang ada di `index.html`.
 3. Buka **Settings → API Keys**, catat **Project URL** dan **Publishable key**.
 4. Buka `index.html`, cari bagian `SUPABASE_CONFIG` di dalam tag `<script>`, ganti 2 nilainya dengan punya Anda:
    ```js
@@ -98,14 +108,65 @@ Aplikasi ini butuh 1 project Supabase (gratis) sebagai database bersama. Kalau m
 
 Tabel `tugas` sengaja tidak punya kebijakan **delete** (tidak ada fitur hapus tugas di aplikasi) — kalau perlu bersihkan data lewat Table Editor di dashboard Supabase.
 
+## Setup Google Calendar & Reminder Otomatis
+
+Fitur ini **opsional** — kalau belum di-setup, tugas tetap bisa dibuat & dikelola seperti biasa, cuma tidak otomatis masuk kalender dan tidak ada email pengingat deadline. Fitur ini butuh backend kecil (folder `/api`) yang jalan di Vercel, beda dari sisa aplikasi yang murni `index.html` statis.
+
+**Prasyarat penting:** fitur kalender didesain untuk tim yang pakai **Google Workspace** (akun kantor yang di-manage lewat Google Workspace, bukan Gmail pribadi biasa). Kalau tim Anda pakai Gmail pribadi, Google otomatis mencabut akses kalender tiap 7 hari untuk app yang belum lolos verifikasi resmi Google — anggota akan perlu "Hubungkan ulang" tiap minggu. Dengan Workspace, koneksi sekali berlaku seterusnya.
+
+### 1. Google Cloud Console (buat OAuth Client)
+
+1. Buka [console.cloud.google.com](https://console.cloud.google.com), buat project baru (atau pakai yang sudah ada).
+2. Buka **APIs & Services → Library**, cari **Google Calendar API**, klik **Enable**.
+3. Buka **APIs & Services → OAuth consent screen**. Set **User Type = Internal** (cuma muncul kalau akun Anda bagian dari organisasi Google Workspace — ini yang menghindari masalah token 7 hari di atas). Isi nama app & email seadanya, tidak perlu submit untuk verifikasi karena mode Internal tidak melalui proses itu.
+4. Buka **APIs & Services → Credentials → Create Credentials → OAuth client ID**, tipe **Web application**. Di **Authorized redirect URIs**, tambahkan:
+   ```
+   https://<domain-vercel-Anda>.vercel.app/api/google/callback
+   ```
+5. Catat **Client ID** dan **Client Secret** yang muncul.
+
+### 2. Environment Variables di Vercel
+
+Buka project di [vercel.com](https://vercel.com) → **Settings → Environment Variables**, tambahkan (scope **Production** saja):
+
+| Nama | Isi |
+|---|---|
+| `SUPABASE_URL` | URL project Supabase Anda (sama seperti `SUPABASE_CONFIG.url` di `index.html`) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Dari Supabase **Settings → API Keys** (BUKAN publishable key — ini kunci penuh, jangan pernah taruh di `index.html`) |
+| `GOOGLE_CLIENT_ID` | Dari langkah Google Cloud Console di atas |
+| `GOOGLE_CLIENT_SECRET` | Dari langkah Google Cloud Console di atas |
+| `GOOGLE_REDIRECT_URI` | `https://<domain-vercel-Anda>.vercel.app/api/google/callback` (sama persis dengan yang didaftarkan ke Google) |
+| `OAUTH_STATE_SECRET` | String acak bebas, minimal 32 karakter (dipakai untuk menandatangani parameter `state` OAuth) |
+| `CRON_SECRET` | String acak bebas — Vercel otomatis pakai nama ini untuk mengamankan pemicu cron harian |
+| `EMAILJS_SERVICE_ID` | Sama dengan `EMAILJS_CONFIG.serviceId` di `index.html` |
+| `EMAILJS_PUBLIC_KEY` | Sama dengan `EMAILJS_CONFIG.publicKey` di `index.html` |
+| `EMAILJS_PRIVATE_KEY` | Lihat langkah 3 di bawah |
+| `EMAILJS_REMINDER_TEMPLATE_ID` | Lihat langkah 3 di bawah |
+
+### 3. EmailJS — aktifkan akses server + buat template reminder
+
+1. Dashboard EmailJS → **Account → Security**, aktifkan toggle **"Allow EmailJS API for non-browser applications"**, lalu catat **Private Key** yang muncul di halaman yang sama → isi ke `EMAILJS_PRIVATE_KEY`.
+2. **Email Templates → Create New Template** (ini template ke-2, akun gratis EmailJS maksimal 2 template — cukup untuk kasus H-2 dan overdue karena keduanya pakai template yang sama, cuma beda teks lewat variabel).
+3. Klik ikon **`<>` Code Editor**, tempel isi file [`email-template-reminder.html`](./email-template-reminder.html) dari repo ini (ganti dulu URL di tombol "Buka Papan Koordinasi Tim").
+4. Catat **Template ID**-nya → isi ke `EMAILJS_REMINDER_TEMPLATE_ID`.
+
+### 4. Deploy & aktifkan
+
+Setelah SQL migration (bagian Supabase di atas, termasuk tabel `google_tokens`), semua env var di atas terisi, dan kode di-push — Vercel otomatis mendeteksi folder `/api` dan `vercel.json` (jadwal cron harian jam 06:00 WITA), tidak perlu setting tambahan.
+
+Tiap anggota tim tinggal klik **"📅 Hubungkan Google Calendar"** di panel Anggota Tim (sekali saja, per orang) untuk mengaktifkan auto-assign & reminder untuk tugas yang di-assign ke mereka.
+
 ## Teknologi
 
-Satu halaman `index.html` berisi HTML, CSS, dan JavaScript biasa, tanpa framework, ditambah 2 dependency eksternal via CDN: [EmailJS SDK](https://www.emailjs.com/) untuk notifikasi email, dan [Supabase JS SDK](https://supabase.com/docs/reference/javascript) untuk database bersama real-time.
+Halaman utama `index.html` berisi HTML, CSS, dan JavaScript biasa, tanpa framework, ditambah 2 dependency eksternal via CDN: [EmailJS SDK](https://www.emailjs.com/) untuk notifikasi email, dan [Supabase JS SDK](https://supabase.com/docs/reference/javascript) untuk database bersama real-time.
+
+Untuk fitur Google Calendar & reminder, ada tambahan backend kecil (Vercel Serverless Functions, Node.js polos tanpa dependency npm) di folder `/lib` (helper) dan `/api` (endpoint), plus `vercel.json` untuk jadwal cron harian. Ini satu-satunya bagian aplikasi yang tidak murni static site.
 
 ## Deploy ke Vercel
 
 1. Push repo ini ke GitHub.
 2. Buka [vercel.com](https://vercel.com), klik **Add New → Project**.
 3. Pilih repo ini, klik **Import**.
-4. Biarkan pengaturan default (situs statis), klik **Deploy**.
+4. Biarkan pengaturan default, klik **Deploy** (Vercel otomatis mendeteksi folder `/api` sebagai Serverless Functions dan `vercel.json` untuk cron, tidak perlu konfigurasi tambahan).
 5. Setelah build selesai (~1 menit), aplikasi live di `namaproyek.vercel.app`.
+6. Kalau mau aktifkan fitur Google Calendar & reminder, lanjutkan ke bagian "Setup Google Calendar & Reminder Otomatis" di atas (isi environment variables dulu, baru fiturnya aktif).
