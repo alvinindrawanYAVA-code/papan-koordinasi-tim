@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Papan Koordinasi Tim</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #f5f6f8;
@@ -25,27 +28,86 @@
 
   * { box-sizing: border-box; }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background: var(--bg);
     color: var(--text);
   }
 
-  .container {
-    max-width: 1080px;
+  .app-shell {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    max-width: 1280px;
     margin: 0 auto;
     padding: 24px 16px 64px;
   }
 
-  header {
-    text-align: center;
-    margin-bottom: 24px;
+  .sidebar {
+    flex: 0 0 240px;
+    position: sticky;
+    top: 24px;
+    background: var(--surface);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    padding: 20px;
   }
 
-  header h1 {
+  .brand {
+    margin: 0 0 24px;
+    padding: 0 4px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    background: linear-gradient(90deg, var(--accent), #a855f7, #ec4899, var(--accent));
+    background-size: 300% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: header-gradient 6s ease infinite;
+  }
+
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .sidebar-nav a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-decoration: none;
+  }
+
+  .sidebar-nav a:hover {
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .main-header {
+    margin-bottom: 20px;
+    scroll-margin-top: 16px;
+  }
+
+  .main-header h1 {
     margin: 0;
-    font-size: 2.75rem;
+    font-size: 2.1rem;
     font-weight: 800;
     letter-spacing: -0.02em;
     background: linear-gradient(90deg, var(--accent), #a855f7, #ec4899, var(--accent));
@@ -68,7 +130,45 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    header h1 { animation: none; }
+    .main-header h1, .brand { animation: none; }
+  }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    color: #fff;
+  }
+
+  .stat-card .stat-value {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .stat-card .stat-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    opacity: 0.85;
+  }
+
+  .stat-total { background: var(--accent); }
+  .stat-belum { background: #64748b; }
+  .stat-dikerjakan { background: var(--dikerjakan); }
+  .stat-selesai { background: var(--selesai); }
+
+  #section-anggota, #section-tambah, #section-tugas {
+    scroll-margin-top: 16px;
   }
 
   .card-panel {
@@ -389,9 +489,26 @@
   }
 
   .task-card .pj {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     font-size: 0.85rem;
     color: var(--text-muted);
     margin-bottom: 4px;
+  }
+
+  .task-card .pj-avatar {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .task-card .pembuat {
@@ -626,6 +743,27 @@
     transform: translateX(-50%) translateY(0);
   }
 
+  @media (max-width: 900px) {
+    .app-shell {
+      flex-direction: column;
+    }
+    .sidebar {
+      position: static;
+      flex-basis: auto;
+      width: 100%;
+    }
+    .sidebar-nav {
+      flex-direction: row;
+      overflow-x: auto;
+    }
+    .brand {
+      margin-bottom: 12px;
+    }
+    .stats-row {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
   @media (max-width: 720px) {
     form#task-form .field,
     form#anggota-form .field {
@@ -641,16 +779,49 @@
     .gantt-labels {
       flex-basis: 120px;
     }
+    .stats-row {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
 </head>
 <body>
-  <div class="container">
-    <header>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">Papan Koordinasi Tim</div>
+      <nav class="sidebar-nav">
+        <a href="#section-ringkasan">🏠 Ringkasan</a>
+        <a href="#section-anggota">👥 Anggota Tim</a>
+        <a href="#section-tambah">➕ Tambah Tugas</a>
+        <a href="#section-tugas">📋 Tugas</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+    <header class="main-header" id="section-ringkasan">
       <h1>Papan Koordinasi Tim</h1>
     </header>
 
-    <div class="card-panel">
+    <div class="stats-row">
+      <div class="stat-card stat-total">
+        <span class="stat-value" id="stat-total">0</span>
+        <span class="stat-label">Total Tugas</span>
+      </div>
+      <div class="stat-card stat-belum">
+        <span class="stat-value" id="stat-belum">0</span>
+        <span class="stat-label">Belum Mulai</span>
+      </div>
+      <div class="stat-card stat-dikerjakan">
+        <span class="stat-value" id="stat-dikerjakan">0</span>
+        <span class="stat-label">Dikerjakan</span>
+      </div>
+      <div class="stat-card stat-selesai">
+        <span class="stat-value" id="stat-selesai">0</span>
+        <span class="stat-label">Selesai</span>
+      </div>
+    </div>
+
+    <div class="card-panel" id="section-anggota">
       <h2 class="panel-title">Anggota Tim</h2>
       <p class="panel-desc">Tambahkan nama &amp; email anggota supaya bisa dipilih sebagai penanggung jawab tugas dan menerima notifikasi email saat di-assign.</p>
       <form id="anggota-form">
@@ -667,7 +838,7 @@
       <div class="anggota-list" id="anggota-list"></div>
     </div>
 
-    <div class="card-panel">
+    <div class="card-panel" id="section-tambah">
       <h2 class="panel-title">Tambah Tugas</h2>
       <form id="task-form">
         <div class="field">
@@ -710,37 +881,40 @@
       <p class="pj-hint" id="pj-hint" hidden>Tambahkan minimal 1 anggota tim di atas dulu sebelum membuat tugas.</p>
     </div>
 
-    <div class="view-switch-row">
-      <h2 class="section-title">Tugas</h2>
-      <div class="view-switch" role="tablist">
-        <button type="button" class="view-switch-btn active" data-view="board">📋 Papan</button>
-        <button type="button" class="view-switch-btn" data-view="gantt">📊 Gantt Chart</button>
+    <div id="section-tugas">
+      <div class="view-switch-row">
+        <h2 class="section-title">Tugas</h2>
+        <div class="view-switch" role="tablist">
+          <button type="button" class="view-switch-btn active" data-view="board">📋 Papan</button>
+          <button type="button" class="view-switch-btn" data-view="gantt">📊 Gantt Chart</button>
+        </div>
+      </div>
+
+      <div class="board" id="board-view">
+        <section class="column" data-status="Belum Mulai">
+          <h2><span class="dot belum"></span>Belum Mulai <span class="count" data-count="Belum Mulai"></span></h2>
+          <div class="task-list" data-list="Belum Mulai"></div>
+        </section>
+        <section class="column" data-status="Dikerjakan">
+          <h2><span class="dot dikerjakan"></span>Dikerjakan <span class="count" data-count="Dikerjakan"></span></h2>
+          <div class="task-list" data-list="Dikerjakan"></div>
+        </section>
+        <section class="column" data-status="Selesai">
+          <h2><span class="dot selesai"></span>Selesai <span class="count" data-count="Selesai"></span></h2>
+          <div class="task-list" data-list="Selesai"></div>
+        </section>
+      </div>
+
+      <div class="card-panel gantt-panel" id="gantt-view" hidden>
+        <div class="gantt-legend">
+          <span><span class="dot belum"></span>Belum Mulai</span>
+          <span><span class="dot dikerjakan"></span>Dikerjakan</span>
+          <span><span class="dot selesai"></span>Selesai</span>
+        </div>
+        <div id="gantt-chart"></div>
       </div>
     </div>
-
-    <div class="board" id="board-view">
-      <section class="column" data-status="Belum Mulai">
-        <h2><span class="dot belum"></span>Belum Mulai <span class="count" data-count="Belum Mulai"></span></h2>
-        <div class="task-list" data-list="Belum Mulai"></div>
-      </section>
-      <section class="column" data-status="Dikerjakan">
-        <h2><span class="dot dikerjakan"></span>Dikerjakan <span class="count" data-count="Dikerjakan"></span></h2>
-        <div class="task-list" data-list="Dikerjakan"></div>
-      </section>
-      <section class="column" data-status="Selesai">
-        <h2><span class="dot selesai"></span>Selesai <span class="count" data-count="Selesai"></span></h2>
-        <div class="task-list" data-list="Selesai"></div>
-      </section>
-    </div>
-
-    <div class="card-panel gantt-panel" id="gantt-view" hidden>
-      <div class="gantt-legend">
-        <span><span class="dot belum"></span>Belum Mulai</span>
-        <span><span class="dot dikerjakan"></span>Dikerjakan</span>
-        <span><span class="dot selesai"></span>Selesai</span>
-      </div>
-      <div id="gantt-chart"></div>
-    </div>
+    </main>
   </div>
 
   <div id="toast"></div>
@@ -959,7 +1133,16 @@
 
     // --- Tugas ---
 
+    function renderStats() {
+      document.getElementById('stat-total').textContent = tasks.length;
+      STATUSES.forEach(status => {
+        const count = tasks.filter(t => t.status === status).length;
+        document.getElementById(`stat-${STATUS_CLASS[status].replace('status-', '')}`).textContent = count;
+      });
+    }
+
     function render() {
+      renderStats();
       STATUSES.forEach(status => {
         const list = document.querySelector(`[data-list="${status}"]`);
         const countEl = document.querySelector(`[data-count="${status}"]`);
@@ -999,7 +1182,13 @@
 
           const pj = document.createElement('div');
           pj.className = 'pj';
-          pj.textContent = task.penanggung_jawab;
+          const pjAvatar = document.createElement('span');
+          pjAvatar.className = 'pj-avatar';
+          pjAvatar.textContent = (task.penanggung_jawab || '?').trim().charAt(0).toUpperCase();
+          const pjName = document.createElement('span');
+          pjName.textContent = task.penanggung_jawab;
+          pj.appendChild(pjAvatar);
+          pj.appendChild(pjName);
 
           const pembuat = document.createElement('div');
           pembuat.className = 'pembuat';
