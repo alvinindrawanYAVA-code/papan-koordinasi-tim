@@ -247,10 +247,54 @@
     text-decoration: underline;
   }
 
+  .view-switch-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+
+  .view-switch {
+    display: inline-flex;
+    gap: 4px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    border-radius: 999px;
+    padding: 4px;
+  }
+
+  .view-switch-btn {
+    border: none;
+    background: none;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .view-switch-btn.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
   .board {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 16px;
+  }
+
+  .board[hidden] {
+    display: none;
   }
 
   .column {
@@ -390,6 +434,149 @@
     margin-top: 12px;
   }
 
+  .gantt-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 16px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  .gantt-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .gantt-body {
+    display: flex;
+    align-items: flex-start;
+  }
+
+  .gantt-labels {
+    flex: 0 0 200px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .gantt-label-cell,
+  .gantt-track-row {
+    height: 60px;
+    box-sizing: border-box;
+    border-top: 1px solid var(--border);
+  }
+
+  .gantt-label-cell {
+    display: flex;
+    align-items: center;
+    padding: 4px 12px 4px 0;
+    min-width: 0;
+  }
+
+  .gantt-corner {
+    height: 32px;
+    border-top: none;
+  }
+
+  .gantt-label-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .gantt-label-pj {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .gantt-timeline-scroll {
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+  }
+
+  .gantt-timeline-inner {
+    position: relative;
+    background-image: repeating-linear-gradient(to right, var(--border) 0, var(--border) 1px, transparent 1px, transparent 224px);
+    background-position: 0 32px;
+  }
+
+  .gantt-ticks-row {
+    display: flex;
+    height: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .gantt-tick {
+    flex-shrink: 0;
+    box-sizing: border-box;
+    padding: 6px 0 0 6px;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+
+  .gantt-track-row {
+    position: relative;
+  }
+
+  .gantt-bar {
+    position: absolute;
+    top: 8px;
+    height: 44px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 14px 4px 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: transform 0.15s ease;
+  }
+
+  .gantt-bar:hover {
+    transform: translateY(-1px);
+  }
+
+  .gantt-bar-avatar {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.32);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .gantt-bar-dates {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .gantt-bar.status-belum { background: var(--belum); }
+  .gantt-bar.status-dikerjakan { background: var(--dikerjakan); }
+  .gantt-bar.status-selesai { background: var(--selesai); }
+
+  .gantt-today-line {
+    position: absolute;
+    top: 32px;
+    width: 2px;
+    background: var(--danger);
+    z-index: 2;
+  }
+
   .bukti-link {
     display: inline-block;
     margin-top: 6px;
@@ -450,6 +637,9 @@
     }
     .board {
       grid-template-columns: 1fr;
+    }
+    .gantt-labels {
+      flex-basis: 120px;
     }
   }
 </style>
@@ -520,7 +710,15 @@
       <p class="pj-hint" id="pj-hint" hidden>Tambahkan minimal 1 anggota tim di atas dulu sebelum membuat tugas.</p>
     </div>
 
-    <div class="board">
+    <div class="view-switch-row">
+      <h2 class="section-title">Tugas</h2>
+      <div class="view-switch" role="tablist">
+        <button type="button" class="view-switch-btn active" data-view="board">📋 Papan</button>
+        <button type="button" class="view-switch-btn" data-view="gantt">📊 Gantt Chart</button>
+      </div>
+    </div>
+
+    <div class="board" id="board-view">
       <section class="column" data-status="Belum Mulai">
         <h2><span class="dot belum"></span>Belum Mulai <span class="count" data-count="Belum Mulai"></span></h2>
         <div class="task-list" data-list="Belum Mulai"></div>
@@ -533,6 +731,15 @@
         <h2><span class="dot selesai"></span>Selesai <span class="count" data-count="Selesai"></span></h2>
         <div class="task-list" data-list="Selesai"></div>
       </section>
+    </div>
+
+    <div class="card-panel gantt-panel" id="gantt-view" hidden>
+      <div class="gantt-legend">
+        <span><span class="dot belum"></span>Belum Mulai</span>
+        <span><span class="dot dikerjakan"></span>Dikerjakan</span>
+        <span><span class="dot selesai"></span>Selesai</span>
+      </div>
+      <div id="gantt-chart"></div>
     </div>
   </div>
 
@@ -570,11 +777,27 @@
       return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
     }
 
+    function formatTanggalPendek(date) {
+      return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+    }
+
     let tasks = [];
     let anggotaList = [];
 
     const STATUS_CLASS = { 'Belum Mulai': 'status-belum', 'Dikerjakan': 'status-dikerjakan', 'Selesai': 'status-selesai' };
     const STATUS_ICON = { 'Belum Mulai': '🕓', 'Dikerjakan': '⚙️', 'Selesai': '✅' };
+
+    let currentView = 'board';
+    function setView(view) {
+      currentView = view;
+      document.getElementById('board-view').hidden = view !== 'board';
+      document.getElementById('gantt-view').hidden = view !== 'gantt';
+      document.querySelectorAll('.view-switch-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+      if (view === 'gantt') renderGantt();
+    }
+    document.querySelectorAll('.view-switch-btn').forEach(b => {
+      b.addEventListener('click', () => setView(b.dataset.view));
+    });
 
     let toastTimer;
     function showToast(msg, ms = 4000) {
@@ -891,6 +1114,153 @@
           list.appendChild(card);
         });
       });
+
+      if (currentView === 'gantt') renderGantt();
+    }
+
+    // --- Gantt Chart ---
+
+    function mondayOnOrBefore(date) {
+      const d = new Date(date);
+      const offset = (d.getDay() + 6) % 7;
+      d.setDate(d.getDate() - offset);
+      return d;
+    }
+
+    function renderGantt() {
+      const container = document.getElementById('gantt-chart');
+      container.innerHTML = '';
+
+      if (tasks.length === 0) {
+        const hint = document.createElement('p');
+        hint.className = 'empty-hint';
+        hint.textContent = 'Belum ada tugas untuk ditampilkan di Gantt chart.';
+        container.appendChild(hint);
+        return;
+      }
+
+      const parseDate = s => new Date(s + 'T00:00:00');
+      const withDates = tasks.filter(t => t.tanggal_mulai && t.tanggal_selesai);
+      const withoutDates = tasks.filter(t => !t.tanggal_mulai || !t.tanggal_selesai);
+
+      if (withDates.length === 0) {
+        const hint = document.createElement('p');
+        hint.className = 'empty-hint';
+        hint.textContent = 'Tugas yang ada belum punya periode tanggal (tugas lama).';
+        container.appendChild(hint);
+        return;
+      }
+
+      const DAY_MS = 24 * 60 * 60 * 1000;
+      const DAY_W = 32;
+
+      const minStart = new Date(Math.min(...withDates.map(t => parseDate(t.tanggal_mulai).getTime())));
+      const maxEnd = new Date(Math.max(...withDates.map(t => parseDate(t.tanggal_selesai).getTime())));
+
+      const rangeStart = mondayOnOrBefore(minStart);
+      const rangeEnd = mondayOnOrBefore(maxEnd);
+      rangeEnd.setDate(rangeEnd.getDate() + 6);
+
+      const totalDays = Math.round((rangeEnd - rangeStart) / DAY_MS) + 1;
+      const totalWidth = totalDays * DAY_W;
+      const weekCount = Math.ceil(totalDays / 7);
+
+      const sorted = [...withDates].sort((a, b) => parseDate(a.tanggal_mulai) - parseDate(b.tanggal_mulai));
+
+      const body = document.createElement('div');
+      body.className = 'gantt-body';
+
+      const labelsCol = document.createElement('div');
+      labelsCol.className = 'gantt-labels';
+      const corner = document.createElement('div');
+      corner.className = 'gantt-label-cell gantt-corner';
+      labelsCol.appendChild(corner);
+
+      const scrollWrap = document.createElement('div');
+      scrollWrap.className = 'gantt-timeline-scroll';
+      const inner = document.createElement('div');
+      inner.className = 'gantt-timeline-inner';
+      inner.style.width = totalWidth + 'px';
+
+      const ticksRow = document.createElement('div');
+      ticksRow.className = 'gantt-ticks-row';
+      for (let i = 0; i < weekCount; i++) {
+        const tickDate = new Date(rangeStart);
+        tickDate.setDate(tickDate.getDate() + i * 7);
+        const tick = document.createElement('div');
+        tick.className = 'gantt-tick';
+        tick.style.width = (7 * DAY_W) + 'px';
+        tick.textContent = formatTanggalPendek(tickDate);
+        ticksRow.appendChild(tick);
+      }
+      inner.appendChild(ticksRow);
+
+      sorted.forEach(task => {
+        const labelCell = document.createElement('div');
+        labelCell.className = 'gantt-label-cell';
+        const labelInner = document.createElement('div');
+        const nameEl = document.createElement('div');
+        nameEl.className = 'gantt-label-name';
+        nameEl.textContent = task.nama;
+        const pjEl = document.createElement('div');
+        pjEl.className = 'gantt-label-pj';
+        pjEl.textContent = task.penanggung_jawab || '';
+        labelInner.appendChild(nameEl);
+        labelInner.appendChild(pjEl);
+        labelCell.appendChild(labelInner);
+        labelsCol.appendChild(labelCell);
+
+        const trackRow = document.createElement('div');
+        trackRow.className = 'gantt-track-row';
+
+        const start = parseDate(task.tanggal_mulai);
+        const end = parseDate(task.tanggal_selesai);
+        const startOffset = Math.round((start - rangeStart) / DAY_MS);
+        const spanDays = Math.round((end - start) / DAY_MS) + 1;
+
+        const bar = document.createElement('div');
+        bar.className = `gantt-bar ${STATUS_CLASS[task.status] || ''}`;
+        bar.style.left = (startOffset * DAY_W) + 'px';
+        bar.style.width = Math.max(spanDays * DAY_W - 4, 46) + 'px';
+        bar.title = `${task.nama} — ${formatTanggal(task.tanggal_mulai)} – ${formatTanggal(task.tanggal_selesai)} (${task.status})`;
+
+        const barAvatar = document.createElement('span');
+        barAvatar.className = 'gantt-bar-avatar';
+        barAvatar.textContent = (task.penanggung_jawab || '?').trim().charAt(0).toUpperCase();
+
+        const barDates = document.createElement('span');
+        barDates.className = 'gantt-bar-dates';
+        barDates.textContent = `${formatTanggalPendek(start)} – ${formatTanggalPendek(end)}`;
+
+        bar.appendChild(barAvatar);
+        bar.appendChild(barDates);
+        trackRow.appendChild(bar);
+
+        inner.appendChild(trackRow);
+      });
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (today >= rangeStart && today <= rangeEnd) {
+        const offset = Math.round((today - rangeStart) / DAY_MS) * DAY_W;
+        const line = document.createElement('div');
+        line.className = 'gantt-today-line';
+        line.style.left = offset + 'px';
+        line.style.height = (sorted.length * 60) + 'px';
+        inner.appendChild(line);
+      }
+
+      scrollWrap.appendChild(inner);
+      body.appendChild(labelsCol);
+      body.appendChild(scrollWrap);
+      container.appendChild(body);
+
+      if (withoutDates.length > 0) {
+        const note = document.createElement('p');
+        note.className = 'empty-hint';
+        note.textContent = `${withoutDates.length} tugas lama tanpa periode tanggal tidak ditampilkan di grafik.`;
+        container.appendChild(note);
+      }
     }
 
     async function sendTaskNotification(task) {
