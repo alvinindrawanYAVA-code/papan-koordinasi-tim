@@ -16,6 +16,7 @@
     --belum: #9ca3af;
     --dikerjakan: #f59e0b;
     --selesai: #16a34a;
+    --danger: #dc2626;
   }
 
   * { box-sizing: border-box; }
@@ -54,16 +55,35 @@
     border: 1px solid var(--border);
     border-radius: 16px;
     padding: 20px;
+    margin-bottom: 20px;
   }
 
-  form#task-form {
-    display: grid;
-    grid-template-columns: 2fr 1.5fr 1.3fr auto;
+  .panel-title {
+    margin: 0 0 4px;
+    font-size: 1.05rem;
+  }
+
+  .panel-desc {
+    margin: 0 0 16px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  form#task-form,
+  form#anggota-form {
+    display: flex;
+    flex-wrap: wrap;
     gap: 12px;
-    margin-bottom: 28px;
+    align-items: end;
   }
 
-  form#task-form label {
+  form#task-form .field,
+  form#anggota-form .field {
+    flex: 1 1 150px;
+  }
+
+  form#task-form label,
+  form#anggota-form label {
     display: block;
     font-size: 0.8rem;
     color: var(--text-muted);
@@ -71,7 +91,8 @@
   }
 
   form#task-form input,
-  form#task-form select {
+  form#task-form select,
+  form#anggota-form input {
     width: 100%;
     padding: 10px 12px;
     border: 1px solid var(--border);
@@ -82,13 +103,16 @@
   }
 
   form#task-form input:focus,
-  form#task-form select:focus {
+  form#task-form select:focus,
+  form#anggota-form input:focus {
     outline: none;
     border-color: var(--accent);
     background: var(--surface);
   }
 
-  form#task-form button {
+  form#task-form button,
+  form#anggota-form button {
+    flex: 0 0 auto;
     align-self: end;
     padding: 10px 20px;
     border: none;
@@ -101,8 +125,50 @@
     white-space: nowrap;
   }
 
-  form#task-form button:hover {
+  form#task-form button:hover,
+  form#anggota-form button:hover {
     background: #4338ca;
+  }
+
+  .pj-hint {
+    color: var(--danger);
+    font-size: 0.8rem;
+    margin: -6px 0 12px;
+  }
+
+  .anggota-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .anggota-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent-soft);
+    border-radius: 999px;
+    padding: 6px 8px 6px 14px;
+    font-size: 0.85rem;
+  }
+
+  .anggota-chip .email {
+    color: var(--text-muted);
+  }
+
+  .anggota-chip button {
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 2px 4px;
+  }
+
+  .anggota-chip button:hover {
+    color: var(--danger);
   }
 
   .board {
@@ -166,6 +232,18 @@
   .task-card .pj {
     font-size: 0.85rem;
     color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+
+  .task-card .pembuat {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+
+  .task-card .timeline {
+    font-size: 0.8rem;
+    color: var(--text-muted);
     margin-bottom: 8px;
   }
 
@@ -203,9 +281,46 @@
     text-decoration: underline;
   }
 
+  .notif-status {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.75rem;
+  }
+
+  .notif-status.ok { color: var(--selesai); }
+  .notif-status.gagal { color: var(--danger); }
+
+  #toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--text);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    max-width: 90vw;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 50;
+  }
+
+  #toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
   @media (max-width: 720px) {
-    form#task-form {
-      grid-template-columns: 1fr;
+    form#task-form .field,
+    form#anggota-form .field {
+      flex: 1 1 100%;
+    }
+    form#task-form button,
+    form#anggota-form button {
+      width: 100%;
     }
     .board {
       grid-template-columns: 1fr;
@@ -221,16 +336,50 @@
     </header>
 
     <div class="card-panel">
+      <h2 class="panel-title">Anggota Tim</h2>
+      <p class="panel-desc">Tambahkan nama &amp; email anggota supaya bisa dipilih sebagai penanggung jawab tugas dan menerima notifikasi email saat di-assign.</p>
+      <form id="anggota-form">
+        <div class="field">
+          <label for="anggota-nama">Nama</label>
+          <input type="text" id="anggota-nama" placeholder="Contoh: Alvin" required>
+        </div>
+        <div class="field">
+          <label for="anggota-email">Email</label>
+          <input type="email" id="anggota-email" placeholder="Contoh: alvin@email.com" required>
+        </div>
+        <button type="submit">Tambah Anggota</button>
+      </form>
+      <div class="anggota-list" id="anggota-list"></div>
+    </div>
+
+    <div class="card-panel">
+      <h2 class="panel-title">Tambah Tugas</h2>
       <form id="task-form">
-        <div>
+        <div class="field">
           <label for="nama-tugas">Nama Tugas</label>
           <input type="text" id="nama-tugas" placeholder="Contoh: Siapkan materi presentasi" required>
         </div>
-        <div>
+        <div class="field">
           <label for="penanggung-jawab">Penanggung Jawab</label>
-          <input type="text" id="penanggung-jawab" placeholder="Contoh: Alvin" required>
+          <select id="penanggung-jawab" required>
+            <option value="" disabled selected>Pilih anggota</option>
+          </select>
         </div>
-        <div>
+        <div class="field">
+          <label for="dibuat-oleh">Dibuat Oleh</label>
+          <select id="dibuat-oleh" required>
+            <option value="" disabled selected>Pilih pembuat</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="tanggal-mulai">Tanggal Mulai</label>
+          <input type="date" id="tanggal-mulai" required>
+        </div>
+        <div class="field">
+          <label for="tanggal-selesai">Tanggal Selesai</label>
+          <input type="date" id="tanggal-selesai" required>
+        </div>
+        <div class="field">
           <label for="status-awal">Status</label>
           <select id="status-awal">
             <option value="Belum Mulai">Belum Mulai</option>
@@ -239,6 +388,7 @@
         </div>
         <button type="submit">Tambah Tugas</button>
       </form>
+      <p class="pj-hint" id="pj-hint" hidden>Tambahkan minimal 1 anggota tim di atas dulu sebelum membuat tugas.</p>
     </div>
 
     <div class="board">
@@ -257,131 +407,347 @@
     </div>
   </div>
 
-<script>
-  const STORAGE_KEY = 'papan-koordinasi-tugas';
-  const STATUSES = ['Belum Mulai', 'Dikerjakan', 'Selesai'];
-  const BUKTI_WAJIB_MSG = 'Isi link bukti kerja dulu sebelum menandai Selesai.';
+  <div id="toast"></div>
 
-  function loadTasks() {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  }
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>
+    const EMAILJS_CONFIG = {
+      publicKey: '77p1yUkE6s_-UTuR9',
+      serviceId: 'service_cv5hu4c',
+      templateId: 'template_q41uex6'
+    };
 
-  function saveTasks(tasks) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-  }
+    function isEmailJsConfigured() {
+      return Object.values(EMAILJS_CONFIG).every(v => v && !v.startsWith('GANTI_'));
+    }
 
-  let tasks = loadTasks();
+    if (isEmailJsConfigured() && window.emailjs) {
+      emailjs.init({ publicKey: EMAILJS_CONFIG.publicKey });
+    }
 
-  function render() {
-    STATUSES.forEach(status => {
-      const list = document.querySelector(`[data-list="${status}"]`);
-      const countEl = document.querySelector(`[data-count="${status}"]`);
-      const items = tasks.filter(t => t.status === status);
+    const TASK_KEY = 'papan-koordinasi-tugas';
+    const ANGGOTA_KEY = 'papan-koordinasi-anggota';
+    const STATUSES = ['Belum Mulai', 'Dikerjakan', 'Selesai'];
+    const BUKTI_WAJIB_MSG = 'Isi link bukti kerja dulu sebelum menandai Selesai.';
 
-      countEl.textContent = `(${items.length})`;
+    function loadTasks() {
+      const raw = localStorage.getItem(TASK_KEY);
+      return raw ? JSON.parse(raw) : [];
+    }
+
+    function saveTasks(list) {
+      localStorage.setItem(TASK_KEY, JSON.stringify(list));
+    }
+
+    function loadAnggota() {
+      const raw = localStorage.getItem(ANGGOTA_KEY);
+      return raw ? JSON.parse(raw) : [];
+    }
+
+    function saveAnggota(list) {
+      localStorage.setItem(ANGGOTA_KEY, JSON.stringify(list));
+    }
+
+    function genId() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    }
+
+    function formatTanggal(isoDate) {
+      if (!isoDate) return '';
+      const d = new Date(isoDate + 'T00:00:00');
+      return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    let tasks = loadTasks();
+    let anggotaList = loadAnggota();
+
+    let toastTimer;
+    function showToast(msg, ms = 4000) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), ms);
+    }
+
+    // --- Anggota Tim ---
+
+    function renderAnggota() {
+      const list = document.getElementById('anggota-list');
       list.innerHTML = '';
 
-      if (items.length === 0) {
+      if (anggotaList.length === 0) {
         const hint = document.createElement('p');
         hint.className = 'empty-hint';
-        hint.textContent = 'Belum ada tugas.';
+        hint.textContent = 'Belum ada anggota tim.';
         list.appendChild(hint);
-        return;
+      } else {
+        anggotaList.forEach(a => {
+          const chip = document.createElement('div');
+          chip.className = 'anggota-chip';
+
+          const label = document.createElement('span');
+          label.textContent = a.nama;
+
+          const email = document.createElement('span');
+          email.className = 'email';
+          email.textContent = a.email;
+
+          const removeBtn = document.createElement('button');
+          removeBtn.type = 'button';
+          removeBtn.textContent = '✕';
+          removeBtn.title = 'Hapus anggota';
+          removeBtn.addEventListener('click', () => {
+            anggotaList = anggotaList.filter(x => x.id !== a.id);
+            saveAnggota(anggotaList);
+            renderAnggota();
+          });
+
+          chip.appendChild(label);
+          chip.appendChild(email);
+          chip.appendChild(removeBtn);
+          list.appendChild(chip);
+        });
       }
 
-      items.forEach(task => {
-        const card = document.createElement('div');
-        card.className = 'task-card';
+      renderMemberSelects();
+    }
 
-        const nama = document.createElement('div');
-        nama.className = 'nama';
-        nama.textContent = task.nama;
+    function populateMemberSelect(select, placeholder) {
+      const currentValue = select.value;
+      select.innerHTML = `<option value="" disabled selected>${placeholder}</option>`;
+      anggotaList.forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a.id;
+        opt.textContent = `${a.nama} (${a.email})`;
+        select.appendChild(opt);
+      });
+      if (anggotaList.some(a => a.id === currentValue)) {
+        select.value = currentValue;
+      }
+    }
 
-        const pj = document.createElement('div');
-        pj.className = 'pj';
-        pj.textContent = task.penanggungJawab;
+    function renderMemberSelects() {
+      populateMemberSelect(document.getElementById('penanggung-jawab'), 'Pilih anggota');
+      populateMemberSelect(document.getElementById('dibuat-oleh'), 'Pilih pembuat');
+      document.getElementById('pj-hint').hidden = anggotaList.length > 0;
+    }
 
-        const select = document.createElement('select');
-        STATUSES.forEach(s => {
-          const opt = document.createElement('option');
-          opt.value = s;
-          opt.textContent = s;
-          if (s === task.status) opt.selected = true;
-          select.appendChild(opt);
-        });
+    document.getElementById('anggota-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const namaInput = document.getElementById('anggota-nama');
+      const emailInput = document.getElementById('anggota-email');
 
-        const buktiInput = document.createElement('input');
-        buktiInput.type = 'url';
-        buktiInput.className = 'bukti-input';
-        buktiInput.placeholder = 'Link bukti kerja (wajib jika Selesai)';
-        buktiInput.value = task.bukti || '';
-        buktiInput.addEventListener('input', () => buktiInput.setCustomValidity(''));
-        buktiInput.addEventListener('change', () => {
-          task.bukti = buktiInput.value.trim() || null;
-          saveTasks(tasks);
-          render();
-        });
+      anggotaList.push({
+        id: genId(),
+        nama: namaInput.value.trim(),
+        email: emailInput.value.trim()
+      });
+      saveAnggota(anggotaList);
+      renderAnggota();
 
-        select.addEventListener('change', () => {
-          const newStatus = select.value;
-          if (newStatus === 'Selesai' && !buktiInput.value.trim()) {
-            select.value = task.status;
-            buktiInput.setCustomValidity(BUKTI_WAJIB_MSG);
-            buktiInput.reportValidity();
-            buktiInput.focus();
-            return;
-          }
-          task.status = newStatus;
-          task.bukti = buktiInput.value.trim() || null;
-          saveTasks(tasks);
-          render();
-        });
+      namaInput.value = '';
+      emailInput.value = '';
+      namaInput.focus();
+    });
 
-        card.appendChild(nama);
-        card.appendChild(pj);
-        card.appendChild(select);
-        card.appendChild(buktiInput);
+    // --- Tugas ---
 
-        if (task.bukti) {
-          const link = document.createElement('a');
-          link.href = task.bukti;
-          link.target = '_blank';
-          link.rel = 'noopener';
-          link.className = 'bukti-link';
-          link.textContent = '🔗 Lihat Bukti';
-          card.appendChild(link);
+    function render() {
+      STATUSES.forEach(status => {
+        const list = document.querySelector(`[data-list="${status}"]`);
+        const countEl = document.querySelector(`[data-count="${status}"]`);
+        const items = tasks.filter(t => t.status === status);
+
+        countEl.textContent = `(${items.length})`;
+        list.innerHTML = '';
+
+        if (items.length === 0) {
+          const hint = document.createElement('p');
+          hint.className = 'empty-hint';
+          hint.textContent = 'Belum ada tugas.';
+          list.appendChild(hint);
+          return;
         }
 
-        list.appendChild(card);
+        items.forEach(task => {
+          const card = document.createElement('div');
+          card.className = 'task-card';
+
+          const nama = document.createElement('div');
+          nama.className = 'nama';
+          nama.textContent = task.nama;
+
+          const pj = document.createElement('div');
+          pj.className = 'pj';
+          pj.textContent = task.penanggungJawab;
+
+          const pembuat = document.createElement('div');
+          pembuat.className = 'pembuat';
+          if (task.dibuatOleh) pembuat.textContent = `Ditambahkan oleh: ${task.dibuatOleh}`;
+
+          const timeline = document.createElement('div');
+          timeline.className = 'timeline';
+          timeline.textContent = (task.tanggalMulai && task.tanggalSelesai)
+            ? `📅 ${formatTanggal(task.tanggalMulai)} – ${formatTanggal(task.tanggalSelesai)}`
+            : 'Periode belum diisi (tugas lama)';
+
+          const select = document.createElement('select');
+          STATUSES.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s;
+            opt.textContent = s;
+            if (s === task.status) opt.selected = true;
+            select.appendChild(opt);
+          });
+
+          const buktiInput = document.createElement('input');
+          buktiInput.type = 'url';
+          buktiInput.className = 'bukti-input';
+          buktiInput.placeholder = 'Link bukti kerja (wajib jika Selesai)';
+          buktiInput.value = task.bukti || '';
+          buktiInput.addEventListener('input', () => buktiInput.setCustomValidity(''));
+          buktiInput.addEventListener('change', () => {
+            task.bukti = buktiInput.value.trim() || null;
+            saveTasks(tasks);
+            render();
+          });
+
+          select.addEventListener('change', () => {
+            const newStatus = select.value;
+            if (newStatus === 'Selesai' && !buktiInput.value.trim()) {
+              select.value = task.status;
+              buktiInput.setCustomValidity(BUKTI_WAJIB_MSG);
+              buktiInput.reportValidity();
+              buktiInput.focus();
+              return;
+            }
+            task.status = newStatus;
+            task.bukti = buktiInput.value.trim() || null;
+            saveTasks(tasks);
+            render();
+          });
+
+          card.appendChild(nama);
+          card.appendChild(pj);
+          if (task.dibuatOleh) card.appendChild(pembuat);
+          card.appendChild(timeline);
+          card.appendChild(select);
+          card.appendChild(buktiInput);
+
+          if (task.bukti) {
+            const link = document.createElement('a');
+            link.href = task.bukti;
+            link.target = '_blank';
+            link.rel = 'noopener';
+            link.className = 'bukti-link';
+            link.textContent = '🔗 Lihat Bukti';
+            card.appendChild(link);
+          }
+
+          if (task.notifStatus === 'terkirim') {
+            const badge = document.createElement('span');
+            badge.className = 'notif-status ok';
+            badge.textContent = '✉️ Notifikasi terkirim ke PJ';
+            card.appendChild(badge);
+          } else if (task.notifStatus === 'gagal') {
+            const badge = document.createElement('span');
+            badge.className = 'notif-status gagal';
+            badge.textContent = '⚠️ Notifikasi email gagal terkirim';
+            card.appendChild(badge);
+          }
+
+          list.appendChild(card);
+        });
       });
+    }
+
+    async function sendTaskNotification(task) {
+      if (!isEmailJsConfigured()) {
+        console.info('EmailJS belum dikonfigurasi, notifikasi email dilewati. Lihat README bagian "Setup Notifikasi Email".');
+        return;
+      }
+      try {
+        await emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, {
+          to_email: task.penanggungJawabEmail,
+          to_name: task.penanggungJawab,
+          task_name: task.nama,
+          task_creator: task.dibuatOleh,
+          task_status: task.status,
+          task_start: formatTanggal(task.tanggalMulai),
+          task_end: formatTanggal(task.tanggalSelesai),
+          created_at: formatTanggal(task.dibuatPada.slice(0, 10))
+        });
+        task.notifStatus = 'terkirim';
+        showToast(`Tugas ditambahkan & notifikasi email terkirim ke ${task.penanggungJawab}.`);
+      } catch (err) {
+        console.error('Gagal kirim notifikasi email:', err);
+        task.notifStatus = 'gagal';
+        showToast('Tugas ditambahkan, tapi notifikasi email gagal terkirim.');
+      }
+      saveTasks(tasks);
+      render();
+    }
+
+    document.getElementById('tanggal-mulai').addEventListener('input', () => {
+      document.getElementById('tanggal-selesai').setCustomValidity('');
     });
-  }
-
-  document.getElementById('task-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const namaInput = document.getElementById('nama-tugas');
-    const pjInput = document.getElementById('penanggung-jawab');
-    const statusInput = document.getElementById('status-awal');
-
-    tasks.push({
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
-      nama: namaInput.value.trim(),
-      penanggungJawab: pjInput.value.trim(),
-      status: statusInput.value,
-      bukti: null
+    document.getElementById('tanggal-selesai').addEventListener('input', () => {
+      document.getElementById('tanggal-selesai').setCustomValidity('');
     });
 
-    saveTasks(tasks);
+    document.getElementById('task-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const namaInput = document.getElementById('nama-tugas');
+      const pjSelect = document.getElementById('penanggung-jawab');
+      const dibuatOlehSelect = document.getElementById('dibuat-oleh');
+      const mulaiInput = document.getElementById('tanggal-mulai');
+      const selesaiInput = document.getElementById('tanggal-selesai');
+      const statusInput = document.getElementById('status-awal');
+
+      if (selesaiInput.value < mulaiInput.value) {
+        selesaiInput.setCustomValidity('Tanggal selesai tidak boleh sebelum tanggal mulai.');
+        selesaiInput.reportValidity();
+        return;
+      }
+      selesaiInput.setCustomValidity('');
+
+      const member = anggotaList.find(a => a.id === pjSelect.value);
+      const creator = anggotaList.find(a => a.id === dibuatOlehSelect.value);
+      if (!member || !creator) return;
+
+      const task = {
+        id: genId(),
+        nama: namaInput.value.trim(),
+        penanggungJawab: member.nama,
+        penanggungJawabEmail: member.email,
+        dibuatOleh: creator.nama,
+        status: statusInput.value,
+        bukti: null,
+        tanggalMulai: mulaiInput.value,
+        tanggalSelesai: selesaiInput.value,
+        dibuatPada: new Date().toISOString(),
+        notifStatus: null
+      };
+
+      tasks.push(task);
+      saveTasks(tasks);
+      render();
+      showToast(`Tugas "${task.nama}" ditambahkan. Mengirim notifikasi email…`);
+
+      namaInput.value = '';
+      pjSelect.value = '';
+      dibuatOlehSelect.value = '';
+      mulaiInput.value = '';
+      selesaiInput.value = '';
+      statusInput.value = 'Belum Mulai';
+      namaInput.focus();
+
+      sendTaskNotification(task);
+    });
+
+    renderAnggota();
     render();
-
-    namaInput.value = '';
-    pjInput.value = '';
-    statusInput.value = 'Belum Mulai';
-    namaInput.focus();
-  });
-
-  render();
-</script>
+  </script>
 </body>
 </html>
