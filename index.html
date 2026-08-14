@@ -72,6 +72,33 @@
     animation: header-gradient 6s ease infinite;
   }
 
+  .sidebar-user {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-user label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  .sidebar-user select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    background: var(--bg);
+    color: var(--text);
+  }
+
   .sidebar-nav {
     display: flex;
     flex-direction: column;
@@ -716,6 +743,29 @@
     font-size: 0.72rem;
   }
 
+  .reminder-btn {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 6px 12px;
+    border: 1px solid var(--dikerjakan);
+    border-radius: 999px;
+    background: var(--dikerjakan-soft);
+    color: #92400e;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .reminder-btn:hover {
+    background: var(--dikerjakan);
+    color: #fff;
+  }
+
+  .reminder-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+
   .notif-status.ok, .calendar-status.ok { background: var(--selesai-soft); color: var(--selesai); }
   .notif-status.gagal, .calendar-status.gagal { background: #fee2e2; color: var(--danger); }
   .calendar-status.info { background: var(--border); color: var(--text-muted); }
@@ -789,6 +839,12 @@
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">Papan Koordinasi Tim</div>
+      <div class="sidebar-user">
+        <label for="current-user-select">Login sebagai</label>
+        <select id="current-user-select">
+          <option value="">Pilih nama Anda</option>
+        </select>
+      </div>
       <nav class="sidebar-nav">
         <a href="#section-ringkasan">🏠 Ringkasan</a>
         <a href="#section-anggota">👥 Anggota Tim</a>
@@ -961,6 +1017,24 @@
     const STATUS_CLASS = { 'Belum Mulai': 'status-belum', 'Dikerjakan': 'status-dikerjakan', 'Selesai': 'status-selesai' };
     const STATUS_ICON = { 'Belum Mulai': '🕓', 'Dikerjakan': '⚙️', 'Selesai': '✅' };
 
+    let currentUserId = localStorage.getItem('currentUserId') || '';
+    function populateCurrentUserSelect() {
+      const select = document.getElementById('current-user-select');
+      select.innerHTML = '<option value="">Pilih nama Anda</option>';
+      anggotaList.forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a.id;
+        opt.textContent = a.nama;
+        select.appendChild(opt);
+      });
+      select.value = anggotaList.some(a => a.id === currentUserId) ? currentUserId : '';
+    }
+    document.getElementById('current-user-select').addEventListener('change', (e) => {
+      currentUserId = e.target.value;
+      localStorage.setItem('currentUserId', currentUserId);
+      render();
+    });
+
     let currentView = 'board';
     function setView(view) {
       currentView = view;
@@ -1108,6 +1182,7 @@
       populateMemberSelect(document.getElementById('penanggung-jawab'), 'Pilih anggota');
       populateMemberSelect(document.getElementById('dibuat-oleh'), 'Pilih pembuat');
       document.getElementById('pj-hint').hidden = anggotaList.length > 0;
+      populateCurrentUserSelect();
     }
 
     document.getElementById('anggota-form').addEventListener('submit', async (e) => {
@@ -1296,6 +1371,35 @@
             calBadge.className = 'calendar-status info';
             calBadge.textContent = 'PJ belum menghubungkan Google Calendar';
             body.appendChild(calBadge);
+          }
+
+          const currentUser = anggotaList.find(a => a.id === currentUserId);
+          const isCreator = currentUser && task.dibuat_oleh === currentUser.nama;
+          if (isCreator && task.status !== 'Selesai' && task.penanggung_jawab_email) {
+            const reminderBtn = document.createElement('button');
+            reminderBtn.type = 'button';
+            reminderBtn.className = 'reminder-btn';
+            reminderBtn.textContent = '🔔 Kirim Pengingat';
+            reminderBtn.addEventListener('click', async () => {
+              reminderBtn.disabled = true;
+              reminderBtn.textContent = 'Mengirim…';
+              try {
+                const res = await fetch('/api/reminder/send', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ taskId: task.id })
+                });
+                if (!res.ok) throw new Error('Gagal mengirim pengingat');
+                showToast(`Pengingat terkirim ke ${task.penanggung_jawab}.`);
+              } catch (err) {
+                console.error('Gagal kirim pengingat:', err);
+                showToast('Gagal mengirim pengingat.');
+              } finally {
+                reminderBtn.disabled = false;
+                reminderBtn.textContent = '🔔 Kirim Pengingat';
+              }
+            });
+            body.appendChild(reminderBtn);
           }
 
           card.appendChild(accent);
