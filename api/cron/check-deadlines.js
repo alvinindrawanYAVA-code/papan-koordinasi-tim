@@ -9,6 +9,7 @@ function buildReminderParams(task, { headline, message, accentColor }) {
   return {
     to_email: task.penanggung_jawab_email,
     to_name: task.penanggung_jawab,
+    to_initial: (task.penanggung_jawab || '?').trim().charAt(0).toUpperCase(),
     task_name: task.nama,
     task_description: task.deskripsi || '-',
     task_start: formatTanggal(task.tanggal_mulai),

@@ -1462,6 +1462,7 @@
         await emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, {
           to_email: task.penanggung_jawab_email,
           to_name: task.penanggung_jawab,
+          to_initial: (task.penanggung_jawab || '?').trim().charAt(0).toUpperCase(),
           task_name: task.nama,
           task_description: task.deskripsi || '-',
           task_creator: task.dibuat_oleh,
