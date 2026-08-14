@@ -841,7 +841,7 @@
     <aside class="sidebar">
       <div class="brand">Papan Koordinasi Tim</div>
       <div class="sidebar-user">
-        <label for="current-user-select">Login sebagai</label>
+        <label for="current-user-select">Lihat Sebagai</label>
         <select id="current-user-select">
           <option value="">Pilih nama Anda</option>
         </select>
@@ -1023,7 +1023,7 @@
     let currentUserId = localStorage.getItem('currentUserId') || '';
     function populateCurrentUserSelect() {
       const select = document.getElementById('current-user-select');
-      select.innerHTML = '<option value="">Pilih nama Anda</option>';
+      select.innerHTML = '<option value="">🔍 Semua Tugas</option>';
       anggotaList.forEach(a => {
         const opt = document.createElement('option');
         opt.value = a.id;
@@ -1031,6 +1031,12 @@
         select.appendChild(opt);
       });
       select.value = anggotaList.some(a => a.id === currentUserId) ? currentUserId : '';
+    }
+    function getVisibleTasks() {
+      if (!currentUserId) return tasks;
+      const currentUser = anggotaList.find(a => a.id === currentUserId);
+      if (!currentUser) return tasks;
+      return tasks.filter(t => t.penanggung_jawab_id === currentUserId || t.dibuat_oleh === currentUser.nama);
     }
     document.getElementById('current-user-select').addEventListener('change', (e) => {
       currentUserId = e.target.value;
@@ -1235,19 +1241,21 @@
     // --- Tugas ---
 
     function renderStats() {
-      document.getElementById('stat-total').textContent = tasks.length;
+      const visibleTasks = getVisibleTasks();
+      document.getElementById('stat-total').textContent = visibleTasks.length;
       STATUSES.forEach(status => {
-        const count = tasks.filter(t => t.status === status).length;
+        const count = visibleTasks.filter(t => t.status === status).length;
         document.getElementById(`stat-${STATUS_CLASS[status].replace('status-', '')}`).textContent = count;
       });
     }
 
     function render() {
       renderStats();
+      const visibleTasks = getVisibleTasks();
       STATUSES.forEach(status => {
         const list = document.querySelector(`[data-list="${status}"]`);
         const countEl = document.querySelector(`[data-count="${status}"]`);
-        const items = tasks.filter(t => t.status === status);
+        const items = visibleTasks.filter(t => t.status === status);
 
         countEl.textContent = `(${items.length})`;
         list.innerHTML = '';
@@ -1450,7 +1458,8 @@
       const container = document.getElementById('gantt-chart');
       container.innerHTML = '';
 
-      if (tasks.length === 0) {
+      const visibleTasks = getVisibleTasks();
+      if (visibleTasks.length === 0) {
         const hint = document.createElement('p');
         hint.className = 'empty-hint';
         hint.textContent = 'Belum ada tugas untuk ditampilkan di Gantt chart.';
@@ -1459,8 +1468,8 @@
       }
 
       const parseDate = s => new Date(s + 'T00:00:00');
-      const withDates = tasks.filter(t => t.tanggal_mulai && t.tanggal_selesai);
-      const withoutDates = tasks.filter(t => !t.tanggal_mulai || !t.tanggal_selesai);
+      const withDates = visibleTasks.filter(t => t.tanggal_mulai && t.tanggal_selesai);
+      const withoutDates = visibleTasks.filter(t => !t.tanggal_mulai || !t.tanggal_selesai);
 
       if (withDates.length === 0) {
         const hint = document.createElement('p');
