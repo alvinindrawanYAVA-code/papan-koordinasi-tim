@@ -303,76 +303,115 @@
 
   .anggota-list {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+    flex-direction: column;
+    gap: 10px;
     margin-top: 16px;
   }
 
   .anggota-chip {
     display: flex;
     align-items: center;
-    gap: 8px;
+    flex-wrap: wrap;
+    gap: 12px;
     background: var(--surface);
-    border-radius: 999px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
     box-shadow: var(--shadow);
-    padding: 6px 12px 6px 6px;
+    padding: 12px 16px;
     font-size: 0.85rem;
+    transition: border-color 0.15s ease;
+  }
+
+  .anggota-chip:hover {
+    border-color: var(--accent);
   }
 
   .anggota-chip .avatar {
-    width: 24px;
-    height: 24px;
+    width: 34px;
+    height: 34px;
     flex-shrink: 0;
     border-radius: 50%;
     background: var(--accent);
     color: #fff;
-    font-size: 0.7rem;
+    font-size: 0.85rem;
     font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  .anggota-chip .email {
-    color: var(--text-muted);
+  .anggota-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 180px;
+    min-width: 0;
   }
 
-  .anggota-chip button {
+  .anggota-info .nama-text {
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .anggota-chip .email {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .anggota-chip .anggota-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  .anggota-chip button.remove-btn {
     border: none;
     background: none;
     color: var(--text-muted);
     cursor: pointer;
     font-size: 1rem;
     line-height: 1;
-    padding: 2px 4px;
+    padding: 4px;
+    flex-shrink: 0;
   }
 
-  .anggota-chip button:hover {
+  .anggota-chip button.remove-btn:hover {
     color: var(--danger);
   }
 
   .anggota-chip a.google-connect,
   .anggota-chip button.google-disconnect {
     font-size: 0.75rem;
+    font-weight: 600;
     text-decoration: none;
     border: none;
-    background: none;
     cursor: pointer;
-    padding: 0;
+    padding: 6px 10px;
+    border-radius: 999px;
     white-space: nowrap;
   }
 
   .anggota-chip a.google-connect {
     color: var(--accent);
+    background: var(--accent-soft);
   }
 
   .anggota-chip button.google-disconnect {
     color: var(--selesai);
+    background: var(--selesai-soft);
   }
 
   .anggota-chip a.google-connect:hover,
   .anggota-chip button.google-disconnect:hover {
-    text-decoration: underline;
+    filter: brightness(0.95);
   }
 
   .view-switch-row {
@@ -1130,12 +1169,19 @@
           avatar.className = 'avatar';
           avatar.textContent = (a.nama || '?').trim().charAt(0).toUpperCase();
 
+          const info = document.createElement('div');
+          info.className = 'anggota-info';
+
           const label = document.createElement('span');
+          label.className = 'nama-text';
           label.textContent = a.nama;
 
           const email = document.createElement('span');
           email.className = 'email';
           email.textContent = a.email;
+
+          info.appendChild(label);
+          info.appendChild(email);
 
           let googleEl;
           if (a.google_connected) {
@@ -1172,6 +1218,7 @@
 
           const removeBtn = document.createElement('button');
           removeBtn.type = 'button';
+          removeBtn.className = 'remove-btn';
           removeBtn.textContent = '✕';
           removeBtn.title = 'Hapus anggota';
           removeBtn.addEventListener('click', async () => {
@@ -1184,11 +1231,14 @@
             await fetchAnggota();
           });
 
+          const actions = document.createElement('div');
+          actions.className = 'anggota-actions';
+          actions.appendChild(googleEl);
+          actions.appendChild(removeBtn);
+
           chip.appendChild(avatar);
-          chip.appendChild(label);
-          chip.appendChild(email);
-          chip.appendChild(googleEl);
-          chip.appendChild(removeBtn);
+          chip.appendChild(info);
+          chip.appendChild(actions);
           list.appendChild(chip);
         });
       }
