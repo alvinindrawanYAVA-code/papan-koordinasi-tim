@@ -1,5 +1,5 @@
 const { sbSelect, sbUpsert, sbUpdate } = require('../../lib/supabaseAdmin');
-const { verifyState, exchangeCodeForTokens } = require('../../lib/google');
+const { verifyState, exchangeCodeForTokens, syncTaskCalendarEvent } = require('../../lib/google');
 
 module.exports = async (req, res) => {
   const { code, state, error: googleError } = req.query;
@@ -54,6 +54,25 @@ module.exports = async (req, res) => {
       { id: `eq.${anggotaId}` },
       { google_connected: true, google_connected_at: new Date().toISOString() }
     );
+
+    // Backfill: tugas lama milik anggota ini yang dulu dilewati karena belum
+    // connect, sekarang dibuatkan event kalendernya juga. Kegagalan di sini
+    // tidak menggagalkan proses connect -- token sudah tersimpan valid.
+    try {
+      const pendingTasks = await sbSelect('tugas', {
+        penanggung_jawab_id: `eq.${anggotaId}`,
+        calendar_status: 'eq.skipped_not_connected',
+        status: 'neq.Selesai',
+        tanggal_mulai: 'not.is.null',
+        tanggal_selesai: 'not.is.null',
+        select: '*',
+      });
+      for (const task of pendingTasks || []) {
+        await syncTaskCalendarEvent(task);
+      }
+    } catch (err) {
+      console.error('google/callback: gagal backfill event kalender tugas lama:', err);
+    }
 
     res.redirect('/?google=connected');
   } catch (err) {
