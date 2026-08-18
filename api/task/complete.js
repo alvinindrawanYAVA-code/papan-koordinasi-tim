@@ -39,8 +39,12 @@ module.exports = async (req, res) => {
       return;
     }
 
+    // reminder_message dirender sebagai teks polos di template email (bukan lewat
+    // tag <a>), jadi URL bukti disertakan apa adanya di sini -- kebanyakan klien
+    // email (Gmail, Outlook, dll) otomatis mengubah URL polos jadi link yang bisa
+    // diklik, tanpa perlu ubah template EmailJS di dashboard.
     const message = task.bukti
-      ? `${task.penanggung_jawab || 'Penanggung jawab'} menandai tugas "${task.nama}" sudah selesai, lengkap dengan bukti kerja.`
+      ? `${task.penanggung_jawab || 'Penanggung jawab'} menandai tugas "${task.nama}" sudah selesai. Link bukti kerja: ${task.bukti}`
       : `${task.penanggung_jawab || 'Penanggung jawab'} menandai tugas "${task.nama}" sudah selesai.`;
 
     await sendEmail({
