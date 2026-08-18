@@ -19,13 +19,16 @@ module.exports = async (req, res) => {
       return;
     }
 
-    if (task.calendar_event_id) {
-      res.status(200).json({ status: task.calendar_status, alreadyDone: true });
-      return;
+    const pjRows = await sbSelect('tugas_pj', { tugas_id: `eq.${taskId}`, select: '*' });
+    const statuses = [];
+    for (const pj of pjRows || []) {
+      if (pj.calendar_event_id) {
+        statuses.push(pj.calendar_status);
+        continue;
+      }
+      statuses.push(await syncTaskCalendarEvent(task, pj));
     }
-
-    const status = await syncTaskCalendarEvent(task);
-    res.status(200).json({ status });
+    res.status(200).json({ statuses });
   } catch (err) {
     console.error('google/create-event error:', err);
     res.status(500).json({ error: 'Terjadi kesalahan server' });

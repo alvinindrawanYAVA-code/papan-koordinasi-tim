@@ -55,20 +55,19 @@ module.exports = async (req, res) => {
       { google_connected: true, google_connected_at: new Date().toISOString() }
     );
 
-    // Backfill: tugas lama milik anggota ini yang dulu dilewati karena belum
+    // Backfill: tugas lama yang anggota ini di-assign, dulu dilewati karena belum
     // connect, sekarang dibuatkan event kalendernya juga. Kegagalan di sini
     // tidak menggagalkan proses connect -- token sudah tersimpan valid.
     try {
-      const pendingTasks = await sbSelect('tugas', {
-        penanggung_jawab_id: `eq.${anggotaId}`,
+      const pendingPj = await sbSelect('tugas_pj', {
+        anggota_id: `eq.${anggotaId}`,
         calendar_status: 'eq.skipped_not_connected',
-        status: 'neq.Selesai',
-        tanggal_mulai: 'not.is.null',
-        tanggal_selesai: 'not.is.null',
-        select: '*',
+        select: '*,tugas(*)',
       });
-      for (const task of pendingTasks || []) {
-        await syncTaskCalendarEvent(task);
+      for (const pj of pendingPj || []) {
+        const task = pj.tugas;
+        if (!task || task.status === 'Selesai' || !task.tanggal_mulai || !task.tanggal_selesai) continue;
+        await syncTaskCalendarEvent(task, pj);
       }
     } catch (err) {
       console.error('google/callback: gagal backfill event kalender tugas lama:', err);

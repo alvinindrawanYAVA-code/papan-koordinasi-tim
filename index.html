@@ -305,6 +305,37 @@
     margin: 12px 0 0;
   }
 
+  .pj-multiselect {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .pj-chip-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+
+  .pj-chip-option:hover {
+    border-color: var(--accent);
+  }
+
+  .pj-chip-option.selected {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
   .anggota-list {
     display: flex;
     flex-direction: column;
@@ -749,6 +780,29 @@
   .status-belum .gantt-label-avatar { background: var(--belum); }
   .status-dikerjakan .gantt-label-avatar { background: var(--dikerjakan); }
   .status-selesai .gantt-label-avatar { background: var(--selesai); }
+
+  .gantt-label-avatar-wrap,
+  .gantt-bar-avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .pj-count-badge {
+    position: absolute;
+    right: -4px;
+    bottom: -4px;
+    min-width: 14px;
+    height: 14px;
+    padding: 0 3px;
+    border-radius: 999px;
+    background: var(--text);
+    color: #fff;
+    font-size: 0.55rem;
+    font-weight: 700;
+    line-height: 14px;
+    text-align: center;
+    box-shadow: 0 0 0 2px var(--surface);
+  }
 
   .gantt-label-text {
     min-width: 0;
@@ -1221,11 +1275,9 @@
           <label for="deskripsi-tugas">Deskripsi (opsional)</label>
           <textarea id="deskripsi-tugas" rows="2" placeholder="Detail tambahan, instruksi khusus, dll (opsional)"></textarea>
         </div>
-        <div class="field">
-          <label for="penanggung-jawab">Penanggung Jawab</label>
-          <select id="penanggung-jawab" required>
-            <option value="" disabled selected>Pilih anggota</option>
-          </select>
+        <div class="field field-wide">
+          <label>Penanggung Jawab (bisa pilih lebih dari 1)</label>
+          <div class="pj-multiselect" id="penanggung-jawab-group"></div>
         </div>
         <div class="field">
           <label for="dibuat-oleh">Dibuat Oleh</label>
@@ -1350,7 +1402,7 @@
       const currentUser = anggotaList.find(a => a.id === currentUserId);
       if (!currentUser) return tasks;
       return tasks.filter(t => {
-        const isAssigned = t.penanggung_jawab_id === currentUserId;
+        const isAssigned = (t.tugas_pj || []).some(p => p.anggota_id === currentUserId);
         const isCreated = t.dibuat_oleh === currentUser.nama;
         if (currentUserRole === 'created') return isCreated;
         if (currentUserRole === 'both') return isAssigned || isCreated;
@@ -1416,7 +1468,7 @@
     }
 
     async function fetchTasks() {
-      const { data, error } = await db.from('tugas').select('*').order('dibuat_pada', { ascending: true });
+      const { data, error } = await db.from('tugas').select('*, tugas_pj(*)').order('dibuat_pada', { ascending: true });
       if (error) {
         console.error('Gagal memuat tugas:', error);
         showToast('Gagal memuat data tugas.');
@@ -1537,8 +1589,30 @@
       }
     }
 
+    let selectedPjIds = new Set();
+    function populatePjMultiselect() {
+      // Buang id anggota yang sudah dihapus dari tim supaya tidak nyangkut di seleksi.
+      selectedPjIds = new Set([...selectedPjIds].filter(id => anggotaList.some(a => a.id === id)));
+      const group = document.getElementById('penanggung-jawab-group');
+      group.innerHTML = '';
+      anggotaList.forEach(a => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'pj-chip-option' + (selectedPjIds.has(a.id) ? ' selected' : '');
+        btn.textContent = a.nama;
+        btn.setAttribute('aria-pressed', selectedPjIds.has(a.id) ? 'true' : 'false');
+        btn.addEventListener('click', () => {
+          if (selectedPjIds.has(a.id)) selectedPjIds.delete(a.id);
+          else selectedPjIds.add(a.id);
+          btn.classList.toggle('selected');
+          btn.setAttribute('aria-pressed', selectedPjIds.has(a.id) ? 'true' : 'false');
+        });
+        group.appendChild(btn);
+      });
+    }
+
     function renderMemberSelects() {
-      populateMemberSelect(document.getElementById('penanggung-jawab'), 'Pilih anggota');
+      populatePjMultiselect();
       populateMemberSelect(document.getElementById('dibuat-oleh'), 'Pilih pembuat');
       document.getElementById('pj-hint').hidden = anggotaList.length > 0;
       populateCurrentUserSelect();
@@ -1659,15 +1733,19 @@
           const details = document.createElement('div');
           details.className = 'task-card-details';
 
-          const pj = document.createElement('div');
-          pj.className = 'task-card-chip chip-pj';
-          const pjAvatar = document.createElement('span');
-          pjAvatar.className = 'pj-avatar';
-          pjAvatar.textContent = (task.penanggung_jawab || '?').trim().charAt(0).toUpperCase();
-          const pjName = document.createElement('span');
-          pjName.textContent = task.penanggung_jawab;
-          pj.appendChild(pjAvatar);
-          pj.appendChild(pjName);
+          const pjList = task.tugas_pj || [];
+          const pjChips = pjList.map(p => {
+            const pj = document.createElement('div');
+            pj.className = 'task-card-chip chip-pj';
+            const pjAvatar = document.createElement('span');
+            pjAvatar.className = 'pj-avatar';
+            pjAvatar.textContent = (p.nama || '?').trim().charAt(0).toUpperCase();
+            const pjName = document.createElement('span');
+            pjName.textContent = p.nama;
+            pj.appendChild(pjAvatar);
+            pj.appendChild(pjName);
+            return pj;
+          });
 
           const pembuat = document.createElement('div');
           pembuat.className = 'task-card-chip';
@@ -1750,7 +1828,7 @@
 
           const chips = document.createElement('div');
           chips.className = 'task-card-chips';
-          chips.appendChild(pj);
+          pjChips.forEach(pj => chips.appendChild(pj));
           if (task.dibuat_oleh) chips.appendChild(pembuat);
           chips.appendChild(timeline);
           details.appendChild(chips);
@@ -1777,29 +1855,29 @@
             footer.appendChild(link);
           }
 
-          if (task.notif_status === 'terkirim') {
+          if (pjList.some(p => p.notif_status === 'terkirim')) {
             const badge = document.createElement('span');
             badge.className = 'notif-status ok';
             badge.textContent = '✉️ Notifikasi terkirim ke PJ';
             footer.appendChild(badge);
-          } else if (task.notif_status === 'gagal') {
+          } else if (pjList.some(p => p.notif_status === 'gagal')) {
             const badge = document.createElement('span');
             badge.className = 'notif-status gagal';
             badge.textContent = '⚠️ Notifikasi email gagal terkirim';
             footer.appendChild(badge);
           }
 
-          if (task.calendar_status === 'created') {
+          if (pjList.some(p => p.calendar_status === 'created')) {
             const calBadge = document.createElement('span');
             calBadge.className = 'calendar-status ok';
             calBadge.textContent = '📅 Ditambahkan ke Google Calendar PJ';
             footer.appendChild(calBadge);
-          } else if (task.calendar_status === 'failed') {
+          } else if (pjList.some(p => p.calendar_status === 'failed')) {
             const calBadge = document.createElement('span');
             calBadge.className = 'calendar-status gagal';
             calBadge.textContent = '⚠️ Gagal menambahkan ke Google Calendar';
             footer.appendChild(calBadge);
-          } else if (task.calendar_status === 'skipped_not_connected') {
+          } else if (pjList.some(p => p.calendar_status === 'skipped_not_connected')) {
             const calBadge = document.createElement('span');
             calBadge.className = 'calendar-status info';
             calBadge.textContent = 'PJ belum menghubungkan Google Calendar';
@@ -1808,7 +1886,7 @@
 
           const currentUser = anggotaList.find(a => a.id === currentUserId);
           const isCreator = currentUser && task.dibuat_oleh === currentUser.nama;
-          if (isCreator && task.status !== 'Selesai' && task.penanggung_jawab_email) {
+          if (isCreator && task.status !== 'Selesai' && pjList.some(p => p.email)) {
             const reminderBtn = document.createElement('button');
             reminderBtn.type = 'button';
             reminderBtn.className = 'reminder-btn';
@@ -1823,7 +1901,7 @@
                   body: JSON.stringify({ taskId: task.id })
                 });
                 if (!res.ok) throw new Error('Gagal mengirim pengingat');
-                showToast(`Pengingat terkirim ke ${task.penanggung_jawab}.`);
+                showToast(`Pengingat terkirim ke ${pjList.map(p => p.nama).join(', ')}.`);
               } catch (err) {
                 console.error('Gagal kirim pengingat:', err);
                 showToast('Gagal mengirim pengingat.');
@@ -1841,7 +1919,7 @@
             cancelBtn.className = 'cancel-btn';
             cancelBtn.textContent = '🗙 Batalkan Tugas';
             cancelBtn.addEventListener('click', async () => {
-              const ok = window.confirm(`Batalkan tugas "${task.nama}"? Penanggung jawab (${task.penanggung_jawab}) akan diberi tahu lewat email.`);
+              const ok = window.confirm(`Batalkan tugas "${task.nama}"? Penanggung jawab (${pjList.map(p => p.nama).join(', ')}) akan diberi tahu lewat email.`);
               if (!ok) return;
               cancelBtn.disabled = true;
               cancelBtn.textContent = 'Membatalkan…';
@@ -1852,7 +1930,7 @@
                   body: JSON.stringify({ taskId: task.id })
                 });
                 if (!res.ok) throw new Error('Gagal membatalkan tugas');
-                showToast(`Tugas "${task.nama}" dibatalkan, ${task.penanggung_jawab} sudah diberi tahu.`);
+                showToast(`Tugas "${task.nama}" dibatalkan, ${pjList.map(p => p.nama).join(', ')} sudah diberi tahu.`);
                 await fetchTasks();
               } catch (err) {
                 console.error('Gagal membatalkan tugas:', err);
@@ -1905,7 +1983,7 @@
         nameEl.textContent = task.nama;
         const pjEl = document.createElement('span');
         pjEl.className = 'dibatalkan-pj';
-        pjEl.textContent = task.penanggung_jawab || '';
+        pjEl.textContent = (task.tugas_pj || []).map(p => p.nama).join(', ');
         info.appendChild(nameEl);
         info.appendChild(pjEl);
 
@@ -2054,11 +2132,21 @@
       sorted.forEach(task => {
         const statusClass = STATUS_CLASS[task.status] || '';
 
+        const ganttPjList = task.tugas_pj || [];
         const labelCell = document.createElement('div');
         labelCell.className = `gantt-label-cell ${statusClass}`;
+        const labelAvatarWrap = document.createElement('span');
+        labelAvatarWrap.className = 'gantt-label-avatar-wrap';
         const labelAvatar = document.createElement('span');
         labelAvatar.className = 'gantt-label-avatar';
-        labelAvatar.textContent = (task.penanggung_jawab || '?').trim().charAt(0).toUpperCase();
+        labelAvatar.textContent = (ganttPjList[0]?.nama || '?').trim().charAt(0).toUpperCase();
+        labelAvatarWrap.appendChild(labelAvatar);
+        if (ganttPjList.length > 1) {
+          const countBadge = document.createElement('span');
+          countBadge.className = 'pj-count-badge';
+          countBadge.textContent = `+${ganttPjList.length - 1}`;
+          labelAvatarWrap.appendChild(countBadge);
+        }
         const labelInner = document.createElement('div');
         labelInner.className = 'gantt-label-text';
         const nameEl = document.createElement('div');
@@ -2066,10 +2154,10 @@
         nameEl.textContent = task.nama;
         const pjEl = document.createElement('div');
         pjEl.className = 'gantt-label-pj';
-        pjEl.textContent = task.penanggung_jawab || '';
+        pjEl.textContent = ganttPjList.map(p => p.nama).join(', ');
         labelInner.appendChild(nameEl);
         labelInner.appendChild(pjEl);
-        labelCell.appendChild(labelAvatar);
+        labelCell.appendChild(labelAvatarWrap);
         labelCell.appendChild(labelInner);
         labelsCol.appendChild(labelCell);
 
@@ -2092,9 +2180,18 @@
         bar.style.width = Math.max(spanDays * DAY_W - 4, 12) + 'px';
         bar.title = `${task.nama} — ${formatTanggal(task.tanggal_mulai)} – ${formatTanggal(task.tanggal_selesai)} (${task.status})`;
 
+        const barAvatarWrap = document.createElement('span');
+        barAvatarWrap.className = 'gantt-bar-avatar-wrap';
         const barAvatar = document.createElement('span');
         barAvatar.className = 'gantt-bar-avatar';
-        barAvatar.textContent = (task.penanggung_jawab || '?').trim().charAt(0).toUpperCase();
+        barAvatar.textContent = (ganttPjList[0]?.nama || '?').trim().charAt(0).toUpperCase();
+        barAvatarWrap.appendChild(barAvatar);
+        if (ganttPjList.length > 1) {
+          const barCountBadge = document.createElement('span');
+          barCountBadge.className = 'pj-count-badge';
+          barCountBadge.textContent = `+${ganttPjList.length - 1}`;
+          barAvatarWrap.appendChild(barCountBadge);
+        }
 
         const barDates = document.createElement('span');
         barDates.className = 'gantt-bar-dates';
@@ -2107,7 +2204,7 @@
         barProgress.className = 'gantt-bar-progress';
         barProgress.textContent = `${STATUS_PROGRESS[task.status] ?? 0}%`;
 
-        bar.appendChild(barAvatar);
+        bar.appendChild(barAvatarWrap);
         bar.appendChild(barDates);
         bar.appendChild(barProgress);
         trackRow.appendChild(bar);
@@ -2164,28 +2261,35 @@
         console.info('EmailJS belum dikonfigurasi, notifikasi email dilewati. Lihat README bagian "Setup Notifikasi Email".');
         return;
       }
-      let notifStatus;
-      try {
-        await emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, {
-          to_email: task.penanggung_jawab_email,
-          to_name: task.penanggung_jawab,
-          to_initial: (task.penanggung_jawab || '?').trim().charAt(0).toUpperCase(),
-          task_name: task.nama,
-          task_description: task.deskripsi || '-',
-          task_creator: task.dibuat_oleh,
-          task_status: task.status,
-          task_start: formatTanggal(task.tanggal_mulai),
-          task_end: formatTanggal(task.tanggal_selesai),
-          created_at: formatTanggal(task.dibuat_pada.slice(0, 10))
-        });
-        notifStatus = 'terkirim';
-        showToast(`Notifikasi email terkirim ke ${task.penanggung_jawab}.`);
-      } catch (err) {
-        console.error('Gagal kirim notifikasi email:', err);
-        notifStatus = 'gagal';
-        showToast('Notifikasi email gagal terkirim.');
+      const pjList = task.tugas_pj || [];
+      let anySent = false;
+      let anyFailed = false;
+      for (const pj of pjList) {
+        let notifStatus;
+        try {
+          await emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, {
+            to_email: pj.email,
+            to_name: pj.nama,
+            to_initial: (pj.nama || '?').trim().charAt(0).toUpperCase(),
+            task_name: task.nama,
+            task_description: task.deskripsi || '-',
+            task_creator: task.dibuat_oleh,
+            task_status: task.status,
+            task_start: formatTanggal(task.tanggal_mulai),
+            task_end: formatTanggal(task.tanggal_selesai),
+            created_at: formatTanggal(task.dibuat_pada.slice(0, 10))
+          });
+          notifStatus = 'terkirim';
+          anySent = true;
+        } catch (err) {
+          console.error(`Gagal kirim notifikasi email ke ${pj.nama}:`, err);
+          notifStatus = 'gagal';
+          anyFailed = true;
+        }
+        await db.from('tugas_pj').update({ notif_status: notifStatus }).eq('id', pj.id);
       }
-      await db.from('tugas').update({ notif_status: notifStatus }).eq('id', task.id);
+      if (anySent) showToast(`Notifikasi email terkirim ke ${pjList.map(p => p.nama).join(', ')}.`);
+      else if (anyFailed) showToast('Notifikasi email gagal terkirim.');
       await fetchTasks();
     }
 
@@ -2200,7 +2304,6 @@
       e.preventDefault();
       const namaInput = document.getElementById('nama-tugas');
       const deskripsiInput = document.getElementById('deskripsi-tugas');
-      const pjSelect = document.getElementById('penanggung-jawab');
       const dibuatOlehSelect = document.getElementById('dibuat-oleh');
       const mulaiInput = document.getElementById('tanggal-mulai');
       const selesaiInput = document.getElementById('tanggal-selesai');
@@ -2213,23 +2316,23 @@
       }
       selesaiInput.setCustomValidity('');
 
-      const member = anggotaList.find(a => a.id === pjSelect.value);
+      const selectedMembers = anggotaList.filter(a => selectedPjIds.has(a.id));
       const creator = anggotaList.find(a => a.id === dibuatOlehSelect.value);
-      if (!member || !creator) return;
+      if (selectedMembers.length === 0) {
+        showToast('Pilih minimal 1 penanggung jawab.');
+        return;
+      }
+      if (!creator) return;
 
       const { data: newTask, error } = await db.from('tugas').insert({
         nama: namaInput.value.trim(),
         deskripsi: deskripsiInput.value.trim() || null,
-        penanggung_jawab: member.nama,
-        penanggung_jawab_email: member.email,
-        penanggung_jawab_id: member.id,
         dibuat_oleh: creator.nama,
         status: statusInput.value,
         bukti: null,
         tanggal_mulai: mulaiInput.value,
         tanggal_selesai: selesaiInput.value,
-        dibuat_pada: new Date().toISOString(),
-        notif_status: null
+        dibuat_pada: new Date().toISOString()
       }).select().single();
 
       if (error) {
@@ -2238,11 +2341,21 @@
         return;
       }
 
+      const { data: newPjRows, error: pjError } = await db.from('tugas_pj').insert(
+        selectedMembers.map(m => ({ tugas_id: newTask.id, anggota_id: m.id, nama: m.nama, email: m.email }))
+      ).select();
+      if (pjError) {
+        console.error('Gagal simpan penanggung jawab:', pjError);
+        showToast('Tugas dibuat, tapi gagal menyimpan penanggung jawab.');
+      }
+      newTask.tugas_pj = newPjRows || [];
+
       showToast(`Tugas "${newTask.nama}" ditambahkan. Mengirim notifikasi email…`);
 
       namaInput.value = '';
       deskripsiInput.value = '';
-      pjSelect.value = '';
+      selectedPjIds = new Set();
+      populatePjMultiselect();
       dibuatOlehSelect.value = '';
       mulaiInput.value = '';
       selesaiInput.value = '';
@@ -2262,6 +2375,7 @@
 
     db.channel('papan-koordinasi-sync')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tugas' }, () => fetchTasks())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tugas_pj' }, () => fetchTasks())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'anggota' }, () => fetchAnggota())
       .subscribe();
 

@@ -35,23 +35,27 @@ module.exports = async (req, res) => {
 
     await sbUpdate('tugas', { id: `eq.${taskId}` }, { status: 'Dibatalkan' });
 
-    let calendarCleanup = 'skipped';
-    try {
-      calendarCleanup = await cancelTaskCalendarEvent(task);
-    } catch (err) {
-      console.error('task/cancel: gagal hapus event kalender:', err);
-      calendarCleanup = 'failed';
+    const pjRows = await sbSelect('tugas_pj', { tugas_id: `eq.${taskId}`, select: '*' });
+
+    const calendarCleanup = [];
+    for (const pj of pjRows || []) {
+      try {
+        calendarCleanup.push(await cancelTaskCalendarEvent(pj));
+      } catch (err) {
+        console.error(`task/cancel: gagal hapus event kalender utk pj ${pj.id}:`, err);
+        calendarCleanup.push('failed');
+      }
     }
 
-    let emailSent = false;
-    if (task.penanggung_jawab_email) {
+    let emailsSent = 0;
+    for (const pj of (pjRows || []).filter(p => p.email)) {
       try {
         await sendEmail({
           templateId: process.env.EMAILJS_REMINDER_TEMPLATE_ID,
           templateParams: {
-            to_email: task.penanggung_jawab_email,
-            to_name: task.penanggung_jawab,
-            to_initial: (task.penanggung_jawab || '?').trim().charAt(0).toUpperCase(),
+            to_email: pj.email,
+            to_name: pj.nama,
+            to_initial: (pj.nama || '?').trim().charAt(0).toUpperCase(),
             task_name: task.nama,
             task_description: task.deskripsi || '-',
             task_start: formatTanggal(task.tanggal_mulai),
@@ -62,13 +66,13 @@ module.exports = async (req, res) => {
             accent_color: '#6b7280',
           },
         });
-        emailSent = true;
+        emailsSent++;
       } catch (err) {
-        console.error('task/cancel: gagal kirim email notifikasi:', err);
+        console.error(`task/cancel: gagal kirim email notifikasi ke ${pj.nama}:`, err);
       }
     }
 
-    res.status(200).json({ ok: true, calendarCleanup, emailSent });
+    res.status(200).json({ ok: true, calendarCleanup, emailsSent });
   } catch (err) {
     console.error('task/cancel error:', err);
     res.status(500).json({ error: 'Gagal membatalkan tugas' });

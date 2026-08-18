@@ -5,11 +5,11 @@ const { todayWita, diffDays, formatTanggal } = require('../../lib/time');
 const EMAILJS_RATE_LIMIT_MS = 1100; // EmailJS batasi 1 request/detik
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-function buildReminderParams(task, { headline, message, accentColor }) {
+function buildReminderParams(task, pj, { headline, message, accentColor }) {
   return {
-    to_email: task.penanggung_jawab_email,
-    to_name: task.penanggung_jawab,
-    to_initial: (task.penanggung_jawab || '?').trim().charAt(0).toUpperCase(),
+    to_email: pj.email,
+    to_name: pj.nama,
+    to_initial: (pj.nama || '?').trim().charAt(0).toUpperCase(),
     task_name: task.nama,
     task_description: task.deskripsi || '-',
     task_start: formatTanggal(task.tanggal_mulai),
@@ -45,41 +45,44 @@ module.exports = async (req, res) => {
   let totalChecked = 0;
 
   try {
-    const tasks = await sbSelect('tugas', { status: 'neq.Selesai', select: '*' });
+    const tasks = await sbSelect('tugas', { status: 'neq.Selesai', select: '*, tugas_pj(*)' });
 
     for (const task of tasks || []) {
       // Tugas Dibatalkan tidak pernah "overdue" secara relevan -- jangan diingatkan.
       if (task.status === 'Dibatalkan') continue;
       if (!task.tanggal_selesai || task.tanggal_selesai > today) continue;
 
-      totalChecked++;
-
       const hariTerlambat = diffDays(today, task.tanggal_selesai);
       const isHariReminder = hariTerlambat % 3 === 0;
-      const sudahDikirimHariIni = task.reminder_overdue_last_sent_on && task.reminder_overdue_last_sent_on >= today;
+      if (!isHariReminder) continue;
 
-      if (!isHariReminder || sudahDikirimHariIni || !task.penanggung_jawab_email) continue;
+      for (const pj of task.tugas_pj || []) {
+        totalChecked++;
 
-      try {
-        // hari-0 = tepat di tanggal deadline -- belum benar-benar "terlambat",
-        // jadi pesannya dibedakan dari hari-3/6/dst supaya tidak janggal ("terlambat 0 hari").
-        const message = hariTerlambat === 0
-          ? `Tugas "${task.nama}" jatuh tempo hari ini (${formatTanggal(task.tanggal_selesai)}). Mohon segera diselesaikan atau update statusnya.`
-          : `Tugas "${task.nama}" sudah terlambat ${hariTerlambat} hari dari tenggat (${formatTanggal(task.tanggal_selesai)}). Mohon segera diselesaikan atau update statusnya.`;
-        await sendEmail({
-          templateId: process.env.EMAILJS_REMINDER_TEMPLATE_ID,
-          templateParams: buildReminderParams(task, {
-            headline: hariTerlambat === 0 ? 'Tugas jatuh tempo hari ini' : 'Tugas sudah terlambat',
-            message,
-            accentColor: '#dc2626',
-          }),
-        });
-        await sbUpdate('tugas', { id: `eq.${task.id}` }, { reminder_overdue_last_sent_on: today });
-        overdueSent++;
-        await sleep(EMAILJS_RATE_LIMIT_MS);
-      } catch (err) {
-        console.error(`cron: gagal kirim reminder overdue untuk tugas ${task.id}:`, err);
-        failed++;
+        const sudahDikirimHariIni = pj.reminder_overdue_last_sent_on && pj.reminder_overdue_last_sent_on >= today;
+        if (sudahDikirimHariIni || !pj.email) continue;
+
+        try {
+          // hari-0 = tepat di tanggal deadline -- belum benar-benar "terlambat",
+          // jadi pesannya dibedakan dari hari-3/6/dst supaya tidak janggal ("terlambat 0 hari").
+          const message = hariTerlambat === 0
+            ? `Tugas "${task.nama}" jatuh tempo hari ini (${formatTanggal(task.tanggal_selesai)}). Mohon segera diselesaikan atau update statusnya.`
+            : `Tugas "${task.nama}" sudah terlambat ${hariTerlambat} hari dari tenggat (${formatTanggal(task.tanggal_selesai)}). Mohon segera diselesaikan atau update statusnya.`;
+          await sendEmail({
+            templateId: process.env.EMAILJS_REMINDER_TEMPLATE_ID,
+            templateParams: buildReminderParams(task, pj, {
+              headline: hariTerlambat === 0 ? 'Tugas jatuh tempo hari ini' : 'Tugas sudah terlambat',
+              message,
+              accentColor: '#dc2626',
+            }),
+          });
+          await sbUpdate('tugas_pj', { id: `eq.${pj.id}` }, { reminder_overdue_last_sent_on: today });
+          overdueSent++;
+          await sleep(EMAILJS_RATE_LIMIT_MS);
+        } catch (err) {
+          console.error(`cron: gagal kirim reminder overdue untuk tugas ${task.id} (pj ${pj.id}):`, err);
+          failed++;
+        }
       }
     }
 

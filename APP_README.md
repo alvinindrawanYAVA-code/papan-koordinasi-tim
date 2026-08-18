@@ -6,14 +6,14 @@ Aplikasi web sederhana untuk tim kecil yang selama ini koordinasi tugas lewat Wh
 
 - **Layout dashboard modern**: sidebar navigasi (Ringkasan, Anggota Tim, Tambah Tugas, Tugas) + area konten utama, kartu ringkasan berwarna (Total/Belum Mulai/Dikerjakan/Selesai)
 - Kelola **Anggota Tim**: tambah/hapus nama + email anggota, jadi bisa dipilih sebagai penanggung jawab tugas — tampil sebagai tab tersendiri di sidebar (tidak numpuk di halaman utama biar tetap rapi walau anggotanya banyak)
-- Tambah tugas: nama tugas, **deskripsi tambahan (opsional)**, penanggung jawab (pilih dari Anggota Tim), **pembuat tugas (pilih dari Anggota Tim, untuk transparansi siapa yang assign)**, **periode pengerjaan (tanggal mulai & tanggal selesai, wajib diisi)**, dan status awal (Belum Mulai/Dikerjakan)
+- Tambah tugas: nama tugas, **deskripsi tambahan (opsional)**, **penanggung jawab (bisa pilih lebih dari 1 anggota sekaligus — 1 status dipakai bersama, bukan progres per-orang)**, **pembuat tugas (pilih dari Anggota Tim, untuk transparansi siapa yang assign)**, **periode pengerjaan (tanggal mulai & tanggal selesai, wajib diisi)**, dan status awal (Belum Mulai/Dikerjakan)
 - Ubah status tugas antara **Belum Mulai**, **Dikerjakan**, dan **Selesai** — wajib isi link bukti kerja (mis. link Google Drive/foto yang sudah diupload ke tempat lain) saat ditandai **Selesai**
 - **2 cara lihat tugas**: tampilan **Papan** (kolom per status) atau **Gantt Chart** (bar per tugas di sepanjang sumbu waktu mingguan, warna sesuai status) — tinggal toggle
 - **Filter "Lihat Sebagai"**: pilih nama anggota di sidebar untuk menyaring papan/Gantt/ringkasan supaya cuma menampilkan tugas yang terkait dia (di-assign ke dia ATAU dibuat olehnya); pilih "🔍 Semua Tugas" untuk lihat semuanya lagi. Filter ini juga menentukan siapa yang boleh klik tombol "Kirim Pengingat" (lihat di bawah) — bukan sistem login sungguhan, cuma pembatas kenyamanan di UI karena app ini belum punya autentikasi.
-- **Notifikasi email otomatis saat tugas dibuat**: email rincian tugas (semacam tanda terima) otomatis dikirim ke penanggung jawab lewat EmailJS begitu tugas baru dibuat (lihat setup di bawah)
-- **Pengingat deadline**: 2 jalur — (1) tombol "🔔 Kirim Pengingat" manual di kartu tugas yang belum Selesai, khusus untuk anggota yang sedang dipilih di "Lihat Sebagai" DAN merupakan pembuat tugas itu, klik kapan pun dirasa perlu; (2) **reminder overdue otomatis lewat Vercel Cron**, jalan 1x/hari tapi cuma benar-benar kirim email tiap **3 hari sekali per tugas** (hari-0 = tepat di tanggal deadline, lalu hari-3, hari-6, dst, selama status belum Selesai/Dibatalkan) — bukan tiap hari seperti versi awal, supaya kuota EmailJS gratis (±200 email/bulan) tidak cepat terkuras kalau tugas overdue menumpuk. Tidak ada lagi reminder H-2 (sebelum deadline). Kebijakan notifikasi email di app ini sengaja dibatasi cuma 4 pemicu: tugas baru dibuat, klik "Kirim Pengingat", tugas ditandai Selesai, dan reminder overdue otomatis ini — lihat [CHANGELOG.md](./CHANGELOG.md) untuk riwayat lengkapnya.
+- **Notifikasi email otomatis saat tugas dibuat**: email rincian tugas (semacam tanda terima) otomatis dikirim ke **setiap** penanggung jawab (masing-masing dapat email sendiri-sendiri) lewat EmailJS begitu tugas baru dibuat (lihat setup di bawah)
+- **Pengingat deadline**: 2 jalur — (1) tombol "🔔 Kirim Pengingat" manual di kartu tugas yang belum Selesai, khusus untuk anggota yang sedang dipilih di "Lihat Sebagai" DAN merupakan pembuat tugas itu, klik kapan pun dirasa perlu; (2) **reminder overdue otomatis lewat Vercel Cron**, jalan 1x/hari tapi cuma benar-benar kirim email tiap **3 hari sekali per tugas** (hari-0 = tepat di tanggal deadline, lalu hari-3, hari-6, dst, selama status belum Selesai/Dibatalkan) — bukan tiap hari seperti versi awal, supaya kuota EmailJS gratis (±200 email/bulan) tidak cepat terkuras kalau tugas overdue menumpuk. Kedua jalur ini mengirim ke **semua** penanggung jawab tugas itu. Tidak ada lagi reminder H-2 (sebelum deadline). Kebijakan notifikasi email di app ini sengaja dibatasi cuma 4 pemicu: tugas baru dibuat, klik "Kirim Pengingat", tugas ditandai Selesai, dan reminder overdue otomatis ini — lihat [CHANGELOG.md](./CHANGELOG.md) untuk riwayat lengkapnya.
 - **Data tersinkron real-time**: semua anggota tim melihat papan yang sama secara langsung lewat Supabase Realtime — begitu satu orang tambah/ubah tugas, orang lain yang sedang membuka halaman langsung lihat perubahannya tanpa perlu refresh
-- **Auto-assign ke Google Calendar pribadi**: begitu tugas dibuat, otomatis muncul sebagai event all-day (bisa membentang beberapa hari sesuai periode pengerjaan) di kalender Google milik penanggung jawab — kalau sudah menghubungkan akun Google-nya lewat panel Anggota Tim (sekali connect, berlaku seterusnya). **Backfill otomatis**: kalau penanggung jawab baru connect *setelah* beberapa tugas sudah dibuat untuknya, tugas-tugas lama yang masih aktif (belum Selesai) otomatis ikut dibuatkan event begitu dia selesai connect — tidak perlu dibuat ulang manual.
+- **Auto-assign ke Google Calendar pribadi**: begitu tugas dibuat, otomatis muncul sebagai event all-day (bisa membentang beberapa hari sesuai periode pengerjaan) di kalender Google **masing-masing** penanggung jawab yang sudah connect (1 event per orang, independen — kalau salah satu belum connect, yang lain tetap dapat event-nya) lewat panel Anggota Tim (sekali connect, berlaku seterusnya). **Backfill otomatis**: kalau seorang anggota baru connect *setelah* beberapa tugas sudah di-assign ke dia, tugas-tugas lama yang masih aktif (belum Selesai) otomatis ikut dibuatkan event begitu dia selesai connect — tidak perlu dibuat ulang manual.
 
 ## Cara Pakai
 
@@ -81,7 +81,7 @@ Aplikasi ini butuh 1 project Supabase (gratis) sebagai database bersama. Kalau m
 2. Buka **SQL Editor**, jalankan skrip untuk membuat tabel `anggota` dan `tugas` beserta kebijakan Row Level Security (akses baca/tulis terbuka, karena app belum punya sistem login):
    ```sql
    create table anggota (id uuid primary key default gen_random_uuid(), nama text not null, email text not null, created_at timestamptz not null default now(), google_connected boolean not null default false, google_connected_at timestamptz);
-   create table tugas (id uuid primary key default gen_random_uuid(), nama text not null, deskripsi text, penanggung_jawab text not null, penanggung_jawab_email text not null, penanggung_jawab_id uuid references anggota(id) on delete set null, dibuat_oleh text not null, status text not null default 'Belum Mulai', bukti text, tanggal_mulai date not null, tanggal_selesai date not null, dibuat_pada timestamptz not null default now(), notif_status text, calendar_event_id text, calendar_status text, calendar_error text, reminder_h2_sent_at timestamptz, reminder_overdue_last_sent_on date);
+   create table tugas (id uuid primary key default gen_random_uuid(), nama text not null, deskripsi text, dibuat_oleh text not null, status text not null default 'Belum Mulai', bukti text, tanggal_mulai date not null, tanggal_selesai date not null, dibuat_pada timestamptz not null default now());
    alter table anggota enable row level security;
    alter table tugas enable row level security;
    create policy "anggota_select" on anggota for select using (true);
@@ -93,11 +93,21 @@ Aplikasi ini butuh 1 project Supabase (gratis) sebagai database bersama. Kalau m
    alter publication supabase_realtime add table tugas;
    alter publication supabase_realtime add table anggota;
 
+   -- Penanggung jawab: 1 baris per (tugas, anggota) -- 1 tugas bisa punya lebih
+   -- dari 1 penanggung jawab, masing-masing dilacak terpisah utk kalender & email.
+   create table tugas_pj (id uuid primary key default gen_random_uuid(), tugas_id uuid not null references tugas(id) on delete cascade, anggota_id uuid not null references anggota(id) on delete cascade, nama text not null, email text not null, calendar_event_id text, calendar_status text, calendar_error text, notif_status text, reminder_overdue_last_sent_on date, unique (tugas_id, anggota_id));
+   alter table tugas_pj enable row level security;
+   create policy "tugas_pj_select" on tugas_pj for select using (true);
+   create policy "tugas_pj_insert" on tugas_pj for insert with check (true);
+   alter publication supabase_realtime add table tugas_pj;
+
    create table google_tokens (id uuid primary key default gen_random_uuid(), anggota_id uuid not null unique references anggota(id) on delete cascade, access_token text not null, refresh_token text not null, expires_at timestamptz not null, status text not null default 'connected', last_error text, connected_at timestamptz not null default now(), updated_at timestamptz not null default now());
    alter table google_tokens enable row level security;
    ```
 
    `google_tokens` **sengaja tidak diberi kebijakan RLS apa pun** (default-deny) — tabel ini menyimpan token OAuth Google dan cuma boleh diakses lewat `service_role` key dari server function, tidak pernah lewat publishable key yang ada di `index.html`.
+
+   Riwayat: sebelum fitur multi-assignee, kolom `penanggung_jawab`, `penanggung_jawab_email`, `penanggung_jawab_id`, `calendar_event_id`, `calendar_status`, `calendar_error`, `notif_status`, `reminder_overdue_last_sent_on` ada langsung di tabel `tugas` (1 penanggung jawab per tugas). Sekarang semuanya pindah ke `tugas_pj` supaya 1 tugas bisa punya banyak penanggung jawab, masing-masing dengan status kalender/notifikasi sendiri. Lihat [CHANGELOG.md](./CHANGELOG.md) untuk SQL migrasinya kalau meng-upgrade instalasi lama.
 3. Buka **Settings → API Keys**, catat **Project URL** dan **Publishable key**.
 4. Buka `index.html`, cari bagian `SUPABASE_CONFIG` di dalam tag `<script>`, ganti 2 nilainya dengan punya Anda:
    ```js
