@@ -592,6 +592,14 @@
     min-width: 0;
   }
 
+  /* Kartu di-expand -> judul tugas tampil penuh (boleh 2+ baris), tidak
+     dipotong ellipsis lagi -- pemotongan cuma perlu selagi kartu collapsed. */
+  .task-card-body[open] .nama {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+  }
+
   .task-card-chips {
     display: flex;
     flex-wrap: wrap;
