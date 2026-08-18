@@ -474,6 +474,7 @@
     box-shadow: var(--shadow);
     padding: 16px;
     min-height: 120px;
+    min-width: 0;
   }
 
   .column h2 {
@@ -506,6 +507,7 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+    min-width: 0;
   }
 
   .task-card {
@@ -515,6 +517,7 @@
     border-radius: 14px;
     box-shadow: var(--shadow);
     overflow: hidden;
+    min-width: 0;
   }
 
   .task-card-accent {
@@ -748,8 +751,6 @@
 
   .gantt-timeline-inner {
     position: relative;
-    background-image: repeating-linear-gradient(to right, var(--border) 0, var(--border) 1px, transparent 1px, transparent 224px);
-    background-position: 0 32px;
   }
 
   .gantt-ticks-row {
@@ -763,7 +764,9 @@
     box-sizing: border-box;
     padding: 6px 0 0 6px;
     font-size: 0.72rem;
+    font-weight: 700;
     color: var(--text-muted);
+    border-left: 1px solid var(--border);
   }
 
   .gantt-track-row {
@@ -1306,6 +1309,7 @@
       document.getElementById('gantt-view').hidden = view !== 'gantt';
       document.querySelectorAll('.view-switch-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
       if (view === 'gantt') renderGantt();
+      if (view === 'board') equalizeColumnHeights();
     }
     document.querySelectorAll('.view-switch-btn').forEach(b => {
       b.addEventListener('click', () => setView(b.dataset.view));
@@ -1491,6 +1495,23 @@
         document.getElementById(`stat-${STATUS_CLASS[status].replace('status-', '')}`).textContent = count;
       });
     }
+
+    // CSS Grid otomatis menyamakan tinggi kolom papan saat berdampingan (desktop),
+    // tapi begitu breakpoint mobile menumpuknya jadi 1 kolom, tiap kolom balik ke
+    // tinggi kontennya sendiri -- disamakan manual di sini supaya konsisten sama besar
+    // baik di desktop maupun HP.
+    function equalizeColumnHeights() {
+      const columns = document.querySelectorAll('.board .column');
+      columns.forEach(c => { c.style.minHeight = ''; });
+      let maxHeight = 0;
+      columns.forEach(c => { maxHeight = Math.max(maxHeight, c.offsetHeight); });
+      columns.forEach(c => { c.style.minHeight = maxHeight + 'px'; });
+    }
+    let equalizeColumnsTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(equalizeColumnsTimer);
+      equalizeColumnsTimer = setTimeout(equalizeColumnHeights, 150);
+    });
 
     function render() {
       renderStats();
@@ -1758,6 +1779,7 @@
       renderDibatalkan(visibleTasks);
 
       if (currentView === 'gantt') renderGantt();
+      else equalizeColumnHeights();
     }
 
     function renderDibatalkan(visibleTasks) {
@@ -1815,11 +1837,17 @@
 
     // --- Gantt Chart ---
 
-    function mondayOnOrBefore(date) {
+    function quarterStart(date) {
       const d = new Date(date);
-      const offset = (d.getDay() + 6) % 7;
-      d.setDate(d.getDate() - offset);
-      return d;
+      return new Date(d.getFullYear(), Math.floor(d.getMonth() / 3) * 3, 1);
+    }
+
+    // Awal kuartal berikutnya (batas atas eksklusif) -- lebih gampang dipakai buat
+    // hitung jumlah hari dalam kuartal (termasuk kuartal dgn Februari kabisat) tanpa
+    // perlu tabel jumlah hari per bulan manual.
+    function quarterEndExclusive(date) {
+      const start = quarterStart(date);
+      return new Date(start.getFullYear(), start.getMonth() + 3, 1);
     }
 
     function renderGantt() {
@@ -1850,18 +1878,21 @@
       }
 
       const DAY_MS = 24 * 60 * 60 * 1000;
-      const DAY_W = 32;
+      // Skala kuartalan (zoom-out) -- cukup kecil supaya beberapa kuartal muat
+      // sekaligus tanpa geser horizontal panjang, beda dari skala mingguan yang lama
+      // (32px/hari). Tugas berdurasi pendek tetap kelihatan berkat lebar minimum
+      // bar yang sudah ada di bawah (46px), cuma detail di dalamnya jadi lebih ringkas.
+      const DAY_W = 3;
 
       const minStart = new Date(Math.min(...withDates.map(t => parseDate(t.tanggal_mulai).getTime())));
       const maxEnd = new Date(Math.max(...withDates.map(t => parseDate(t.tanggal_selesai).getTime())));
 
-      const rangeStart = mondayOnOrBefore(minStart);
-      const rangeEnd = mondayOnOrBefore(maxEnd);
-      rangeEnd.setDate(rangeEnd.getDate() + 6);
+      const rangeStart = quarterStart(minStart);
+      const rangeEndExclusive = quarterEndExclusive(maxEnd);
+      const rangeEnd = new Date(rangeEndExclusive.getTime() - DAY_MS);
 
       const totalDays = Math.round((rangeEnd - rangeStart) / DAY_MS) + 1;
       const totalWidth = totalDays * DAY_W;
-      const weekCount = Math.ceil(totalDays / 7);
 
       const sorted = [...withDates].sort((a, b) => parseDate(a.tanggal_mulai) - parseDate(b.tanggal_mulai));
 
@@ -1882,14 +1913,17 @@
 
       const ticksRow = document.createElement('div');
       ticksRow.className = 'gantt-ticks-row';
-      for (let i = 0; i < weekCount; i++) {
-        const tickDate = new Date(rangeStart);
-        tickDate.setDate(tickDate.getDate() + i * 7);
+      let tickCursor = new Date(rangeStart);
+      while (tickCursor < rangeEndExclusive) {
+        const tickEndExclusive = quarterEndExclusive(tickCursor);
+        const daysInQuarter = Math.round((tickEndExclusive - tickCursor) / DAY_MS);
         const tick = document.createElement('div');
         tick.className = 'gantt-tick';
-        tick.style.width = (7 * DAY_W) + 'px';
-        tick.textContent = formatTanggalPendek(tickDate);
+        tick.style.width = (daysInQuarter * DAY_W) + 'px';
+        const quarterNumber = Math.floor(tickCursor.getMonth() / 3) + 1;
+        tick.textContent = `Q${quarterNumber} ${tickCursor.getFullYear()}`;
         ticksRow.appendChild(tick);
+        tickCursor = tickEndExclusive;
       }
       inner.appendChild(ticksRow);
 
