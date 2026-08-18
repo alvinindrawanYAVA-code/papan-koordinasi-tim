@@ -418,44 +418,9 @@
     filter: brightness(0.95);
   }
 
-  .view-switch-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-
   .section-title {
-    margin: 0;
+    margin: 0 0 16px;
     font-size: 1.1rem;
-  }
-
-  .view-switch {
-    display: inline-flex;
-    gap: 4px;
-    background: var(--surface);
-    box-shadow: var(--shadow);
-    border-radius: 999px;
-    padding: 4px;
-  }
-
-  .view-switch-btn {
-    border: none;
-    background: none;
-    padding: 8px 16px;
-    border-radius: 999px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    cursor: pointer;
-    white-space: nowrap;
-  }
-
-  .view-switch-btn.active {
-    background: var(--accent);
-    color: #fff;
   }
 
   .board {
@@ -750,6 +715,7 @@
   .gantt-label-cell {
     display: flex;
     align-items: center;
+    gap: 10px;
     padding: 4px 12px 4px 0;
     min-width: 0;
   }
@@ -757,6 +723,27 @@
   .gantt-corner {
     height: 32px;
     border-top: none;
+  }
+
+  .gantt-label-avatar {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .status-belum .gantt-label-avatar { background: var(--belum); }
+  .status-dikerjakan .gantt-label-avatar { background: var(--dikerjakan); }
+  .status-selesai .gantt-label-avatar { background: var(--selesai); }
+
+  .gantt-label-text {
+    min-width: 0;
   }
 
   .gantt-label-name {
@@ -783,6 +770,8 @@
 
   .gantt-timeline-inner {
     position: relative;
+    background-image: repeating-linear-gradient(to right, var(--border) 0, var(--border) 1px, transparent 1px, transparent 14px);
+    background-position: 0 32px;
   }
 
   .gantt-ticks-row {
@@ -812,17 +801,18 @@
     position: absolute;
     top: 8px;
     height: 44px;
+    min-width: 88px;
     border-radius: 999px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 4px 14px 4px 4px;
+    gap: 6px;
+    padding: 4px 6px;
     font-size: 0.75rem;
     font-weight: 600;
     color: #fff;
     white-space: nowrap;
     overflow: hidden;
-    box-shadow: var(--shadow);
+    box-shadow: 0 6px 16px -4px rgba(31, 36, 48, 0.35);
     transition: transform 0.15s ease;
   }
 
@@ -835,7 +825,7 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.32);
+    background: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -844,13 +834,39 @@
   }
 
   .gantt-bar-dates {
+    min-width: 0;
+    flex-shrink: 1;
     overflow: hidden;
     text-overflow: ellipsis;
+    opacity: 0.92;
   }
 
-  .gantt-bar.status-belum { background: var(--belum); }
-  .gantt-bar.status-dikerjakan { background: var(--dikerjakan); }
-  .gantt-bar.status-selesai { background: var(--selesai); }
+  .gantt-bar-progress {
+    flex-shrink: 0;
+    margin-left: auto;
+    background: rgba(255, 255, 255, 0.92);
+    font-weight: 800;
+    font-size: 0.68rem;
+    padding: 3px 9px;
+    border-radius: 999px;
+  }
+
+  .gantt-bar.status-belum {
+    background: linear-gradient(90deg, #c2c8d3, #9ca3af);
+  }
+  .gantt-bar.status-dikerjakan {
+    background: linear-gradient(90deg, #fbbf24, #ea9c0a);
+  }
+  .gantt-bar.status-selesai {
+    background: linear-gradient(90deg, #4ade80, #16a34a);
+  }
+
+  .gantt-bar.status-belum .gantt-bar-avatar,
+  .gantt-bar.status-belum .gantt-bar-progress { color: #6b7280; }
+  .gantt-bar.status-dikerjakan .gantt-bar-avatar,
+  .gantt-bar.status-dikerjakan .gantt-bar-progress { color: #b45309; }
+  .gantt-bar.status-selesai .gantt-bar-avatar,
+  .gantt-bar.status-selesai .gantt-bar-progress { color: #15803d; }
 
   .gantt-today-line {
     position: absolute;
@@ -1103,10 +1119,21 @@
         <a href="#section-anggota" data-nav="anggota">👥 Anggota Tim</a>
         <a href="#section-tambah" data-nav="tambah">➕ Tambah Tugas</a>
         <a href="#section-tugas" data-nav="tugas">📋 Tugas</a>
+        <a href="#section-gantt-tab" data-nav="gantt">📊 Gantt Chart</a>
       </nav>
     </aside>
 
     <main class="main">
+    <div class="card-panel gantt-panel" id="section-gantt-tab" hidden>
+      <h2 class="panel-title">Gantt Chart</h2>
+      <div class="gantt-legend">
+        <span><span class="dot belum"></span>Belum Mulai</span>
+        <span><span class="dot dikerjakan"></span>Dikerjakan</span>
+        <span><span class="dot selesai"></span>Selesai</span>
+      </div>
+      <div id="gantt-chart"></div>
+    </div>
+
     <div class="card-panel" id="section-anggota" hidden>
       <h2 class="panel-title">Anggota Tim</h2>
       <p class="panel-desc">Tambahkan nama &amp; email anggota supaya bisa dipilih sebagai penanggung jawab tugas dan menerima notifikasi email saat di-assign.</p>
@@ -1192,13 +1219,7 @@
     </div>
 
     <div id="section-tugas">
-      <div class="view-switch-row">
-        <h2 class="section-title">Tugas</h2>
-        <div class="view-switch" role="tablist">
-          <button type="button" class="view-switch-btn active" data-view="board">📋 Papan</button>
-          <button type="button" class="view-switch-btn" data-view="gantt">📊 Gantt Chart</button>
-        </div>
-      </div>
+      <h2 class="section-title">Tugas</h2>
 
       <div class="board" id="board-view">
         <section class="column" data-status="Belum Mulai">
@@ -1213,15 +1234,6 @@
           <h2><span class="dot selesai"></span>Selesai <span class="count" data-count="Selesai"></span></h2>
           <div class="task-list" data-list="Selesai"></div>
         </section>
-      </div>
-
-      <div class="card-panel gantt-panel" id="gantt-view" hidden>
-        <div class="gantt-legend">
-          <span><span class="dot belum"></span>Belum Mulai</span>
-          <span><span class="dot dikerjakan"></span>Dikerjakan</span>
-          <span><span class="dot selesai"></span>Selesai</span>
-        </div>
-        <div id="gantt-chart"></div>
       </div>
 
       <details class="card-panel dibatalkan-panel" id="dibatalkan-section">
@@ -1276,6 +1288,9 @@
 
     const STATUS_CLASS = { 'Belum Mulai': 'status-belum', 'Dikerjakan': 'status-dikerjakan', 'Selesai': 'status-selesai' };
     const STATUS_ICON = { 'Belum Mulai': '🕓', 'Dikerjakan': '⚙️', 'Selesai': '✅' };
+    // Perkiraan progres buat badge di bar Gantt Chart -- bukan data asli (app ini
+    // belum melacak persentase progres per-tugas), cuma pemetaan kasar dari status.
+    const STATUS_PROGRESS = { 'Belum Mulai': 0, 'Dikerjakan': 50, 'Selesai': 100 };
 
     let currentUserId = localStorage.getItem('currentUserId') || '';
     let currentUserRole = localStorage.getItem('currentUserRole') || 'assigned';
@@ -1322,17 +1337,20 @@
     let mainView = 'dashboard';
     function setMainView(view) {
       mainView = view;
-      document.getElementById('dashboard-view').hidden = view === 'anggota';
+      document.getElementById('dashboard-view').hidden = view !== 'dashboard';
       document.getElementById('section-anggota').hidden = view !== 'anggota';
+      document.getElementById('section-gantt-tab').hidden = view !== 'gantt';
       document.querySelectorAll('.sidebar-nav a').forEach(a => {
-        a.classList.toggle('active', a.dataset.nav === 'anggota' && view === 'anggota');
+        a.classList.toggle('active', a.dataset.nav === view && (view === 'anggota' || view === 'gantt'));
       });
+      if (view === 'gantt') renderGantt();
+      if (view === 'dashboard') equalizeColumnHeights();
     }
     document.querySelectorAll('.sidebar-nav a').forEach(a => {
       a.addEventListener('click', (e) => {
         e.preventDefault();
-        if (a.dataset.nav === 'anggota') {
-          setMainView('anggota');
+        if (a.dataset.nav === 'anggota' || a.dataset.nav === 'gantt') {
+          setMainView(a.dataset.nav);
         } else {
           setMainView('dashboard');
           requestAnimationFrame(() => {
@@ -1340,19 +1358,6 @@
           });
         }
       });
-    });
-
-    let currentView = 'board';
-    function setView(view) {
-      currentView = view;
-      document.getElementById('board-view').hidden = view !== 'board';
-      document.getElementById('gantt-view').hidden = view !== 'gantt';
-      document.querySelectorAll('.view-switch-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
-      if (view === 'gantt') renderGantt();
-      if (view === 'board') equalizeColumnHeights();
-    }
-    document.querySelectorAll('.view-switch-btn').forEach(b => {
-      b.addEventListener('click', () => setView(b.dataset.view));
     });
 
     let toastTimer;
@@ -1835,8 +1840,8 @@
 
       renderDibatalkan(visibleTasks);
 
-      if (currentView === 'gantt') renderGantt();
-      else equalizeColumnHeights();
+      if (mainView === 'gantt') renderGantt();
+      if (mainView === 'dashboard') equalizeColumnHeights();
     }
 
     function renderDibatalkan(visibleTasks) {
@@ -1991,9 +1996,15 @@
       inner.appendChild(ticksRow);
 
       sorted.forEach(task => {
+        const statusClass = STATUS_CLASS[task.status] || '';
+
         const labelCell = document.createElement('div');
-        labelCell.className = 'gantt-label-cell';
+        labelCell.className = `gantt-label-cell ${statusClass}`;
+        const labelAvatar = document.createElement('span');
+        labelAvatar.className = 'gantt-label-avatar';
+        labelAvatar.textContent = (task.penanggung_jawab || '?').trim().charAt(0).toUpperCase();
         const labelInner = document.createElement('div');
+        labelInner.className = 'gantt-label-text';
         const nameEl = document.createElement('div');
         nameEl.className = 'gantt-label-name';
         nameEl.textContent = task.nama;
@@ -2002,6 +2013,7 @@
         pjEl.textContent = task.penanggung_jawab || '';
         labelInner.appendChild(nameEl);
         labelInner.appendChild(pjEl);
+        labelCell.appendChild(labelAvatar);
         labelCell.appendChild(labelInner);
         labelsCol.appendChild(labelCell);
 
@@ -2014,9 +2026,9 @@
         const spanDays = Math.round((end - start) / DAY_MS) + 1;
 
         const bar = document.createElement('div');
-        bar.className = `gantt-bar ${STATUS_CLASS[task.status] || ''}`;
+        bar.className = `gantt-bar ${statusClass}`;
         bar.style.left = (startOffset * DAY_W) + 'px';
-        bar.style.width = Math.max(spanDays * DAY_W - 4, 46) + 'px';
+        bar.style.width = Math.max(spanDays * DAY_W - 4, 88) + 'px';
         bar.title = `${task.nama} — ${formatTanggal(task.tanggal_mulai)} – ${formatTanggal(task.tanggal_selesai)} (${task.status})`;
 
         const barAvatar = document.createElement('span');
@@ -2027,8 +2039,16 @@
         barDates.className = 'gantt-bar-dates';
         barDates.textContent = `${formatTanggalPendek(start)} – ${formatTanggalPendek(end)}`;
 
+        // Persentase progres murni perkiraan dari status (bukan data asli, app ini
+        // belum melacak progres per-tugas) -- cuma buat kesan visual "sedang berjalan"
+        // mengikuti referensi desain, bukan angka presisi.
+        const barProgress = document.createElement('span');
+        barProgress.className = 'gantt-bar-progress';
+        barProgress.textContent = `${STATUS_PROGRESS[task.status] ?? 0}%`;
+
         bar.appendChild(barAvatar);
         bar.appendChild(barDates);
+        bar.appendChild(barProgress);
         trackRow.appendChild(bar);
 
         inner.appendChild(trackRow);
