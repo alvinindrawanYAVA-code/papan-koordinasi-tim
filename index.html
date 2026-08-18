@@ -1938,9 +1938,13 @@
       const maxEnd = new Date(Math.max(...withDates.map(t => parseDate(t.tanggal_selesai).getTime())));
 
       // Rentang dimulai dari awal BULAN tugas paling awal (bukan awal kuartal) supaya
-      // tidak ada bulan kosong yang ikut terpadding di depan timeline.
+      // tidak ada bulan kosong yang ikut terpadding di depan timeline. Batas akhir
+      // minimal sampai akhir tahun tugas paling awal itu (bukan cuma sampai tugas
+      // terakhir), supaya bulan-bulan kosong ke depan tetap kelihatan buat perencanaan
+      // -- kecuali memang ada tugas yang melewati tahun itu, rentang ikut diperpanjang.
       const rangeStart = monthStart(minStart);
-      const rangeEndExclusive = monthEndExclusive(maxEnd);
+      const yearEndExclusive = new Date(minStart.getFullYear() + 1, 0, 1);
+      const rangeEndExclusive = new Date(Math.max(monthEndExclusive(maxEnd).getTime(), yearEndExclusive.getTime()));
       const rangeEnd = new Date(rangeEndExclusive.getTime() - DAY_MS);
 
       const totalDays = Math.round((rangeEnd - rangeStart) / DAY_MS) + 1;
