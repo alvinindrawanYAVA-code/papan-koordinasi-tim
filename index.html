@@ -99,6 +99,10 @@
     color: var(--text);
   }
 
+  .sidebar-user-role {
+    margin-top: 12px;
+  }
+
   .sidebar-nav {
     display: flex;
     flex-direction: column;
@@ -528,11 +532,47 @@
     padding: 12px 14px;
   }
 
+  .task-card-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .task-card-summary::-webkit-details-marker,
+  .task-card-summary::marker {
+    display: none;
+    content: '';
+  }
+
   .task-card-head {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 4px;
+    min-width: 0;
+  }
+
+  .task-card-summary-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .task-card-chevron {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    transition: transform 0.15s ease;
+  }
+
+  .task-card-body[open] .task-card-chevron {
+    transform: rotate(180deg);
+  }
+
+  .task-card-details {
+    margin-top: 10px;
   }
 
   .status-icon {
@@ -550,9 +590,30 @@
   .task-card.status-dikerjakan .status-icon { background: var(--dikerjakan-soft); }
   .task-card.status-selesai .status-icon { background: var(--selesai-soft); }
 
+  .quick-status-select {
+    flex-shrink: 0;
+    max-width: 108px;
+    padding: 4px 6px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    font-family: inherit;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .task-card.status-belum .quick-status-select { background: var(--belum-soft); }
+  .task-card.status-dikerjakan .quick-status-select { background: var(--dikerjakan-soft); }
+  .task-card.status-selesai .quick-status-select { background: var(--selesai-soft); }
+
   .task-card .nama {
     font-weight: 600;
     font-size: 0.95rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
   }
 
   .task-card .pj {
@@ -806,6 +867,107 @@
     cursor: default;
   }
 
+  .cancel-btn {
+    display: inline-block;
+    margin-top: 6px;
+    margin-left: 6px;
+    padding: 6px 12px;
+    border: 1px solid var(--danger);
+    border-radius: 999px;
+    background: #fee2e2;
+    color: var(--danger);
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .cancel-btn:hover {
+    background: var(--danger);
+    color: #fff;
+  }
+
+  .cancel-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+
+  .dibatalkan-panel {
+    margin-top: 20px;
+  }
+
+  .dibatalkan-panel summary {
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    list-style: none;
+  }
+
+  .dibatalkan-panel summary::-webkit-details-marker,
+  .dibatalkan-panel summary::marker {
+    display: none;
+    content: '';
+  }
+
+  #dibatalkan-list {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .dibatalkan-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+  }
+
+  .dibatalkan-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .dibatalkan-nama {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-decoration: line-through;
+    color: var(--text-muted);
+  }
+
+  .dibatalkan-pj {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .restore-btn {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .restore-btn:hover {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  .restore-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+
   .notif-status.ok, .calendar-status.ok { background: var(--selesai-soft); color: var(--selesai); }
   .notif-status.gagal, .calendar-status.gagal { background: #fee2e2; color: var(--danger); }
   .calendar-status.info { background: var(--border); color: var(--text-muted); }
@@ -884,6 +1046,14 @@
         <select id="current-user-select">
           <option value="">Pilih nama Anda</option>
         </select>
+        <div class="sidebar-user-role" id="sidebar-user-role" hidden>
+          <label for="current-user-role-select">Tampilkan</label>
+          <select id="current-user-role-select">
+            <option value="assigned">🎯 Ditugaskan ke saya</option>
+            <option value="created">📝 Dibuat oleh saya</option>
+            <option value="both">🔀 Keduanya</option>
+          </select>
+        </div>
       </div>
       <nav class="sidebar-nav">
         <a href="#section-ringkasan" data-nav="ringkasan">🏠 Ringkasan</a>
@@ -1010,6 +1180,11 @@
         </div>
         <div id="gantt-chart"></div>
       </div>
+
+      <details class="card-panel dibatalkan-panel" id="dibatalkan-section">
+        <summary id="dibatalkan-summary">🗑️ Tugas Dibatalkan (0)</summary>
+        <div id="dibatalkan-list"></div>
+      </details>
     </div>
     </div>
     </main>
@@ -1060,6 +1235,10 @@
     const STATUS_ICON = { 'Belum Mulai': '🕓', 'Dikerjakan': '⚙️', 'Selesai': '✅' };
 
     let currentUserId = localStorage.getItem('currentUserId') || '';
+    let currentUserRole = localStorage.getItem('currentUserRole') || 'assigned';
+    function updateRoleSelectVisibility() {
+      document.getElementById('sidebar-user-role').hidden = !currentUserId;
+    }
     function populateCurrentUserSelect() {
       const select = document.getElementById('current-user-select');
       select.innerHTML = '<option value="">🔍 Semua Tugas</option>';
@@ -1070,16 +1249,30 @@
         select.appendChild(opt);
       });
       select.value = anggotaList.some(a => a.id === currentUserId) ? currentUserId : '';
+      document.getElementById('current-user-role-select').value = currentUserRole;
+      updateRoleSelectVisibility();
     }
     function getVisibleTasks() {
       if (!currentUserId) return tasks;
       const currentUser = anggotaList.find(a => a.id === currentUserId);
       if (!currentUser) return tasks;
-      return tasks.filter(t => t.penanggung_jawab_id === currentUserId || t.dibuat_oleh === currentUser.nama);
+      return tasks.filter(t => {
+        const isAssigned = t.penanggung_jawab_id === currentUserId;
+        const isCreated = t.dibuat_oleh === currentUser.nama;
+        if (currentUserRole === 'created') return isCreated;
+        if (currentUserRole === 'both') return isAssigned || isCreated;
+        return isAssigned;
+      });
     }
     document.getElementById('current-user-select').addEventListener('change', (e) => {
       currentUserId = e.target.value;
       localStorage.setItem('currentUserId', currentUserId);
+      updateRoleSelectVisibility();
+      render();
+    });
+    document.getElementById('current-user-role-select').addEventListener('change', (e) => {
+      currentUserRole = e.target.value;
+      localStorage.setItem('currentUserRole', currentUserRole);
       render();
     });
 
@@ -1292,7 +1485,7 @@
 
     function renderStats() {
       const visibleTasks = getVisibleTasks();
-      document.getElementById('stat-total').textContent = visibleTasks.length;
+      document.getElementById('stat-total').textContent = visibleTasks.filter(t => t.status !== 'Dibatalkan').length;
       STATUSES.forEach(status => {
         const count = visibleTasks.filter(t => t.status === status).length;
         document.getElementById(`stat-${STATUS_CLASS[status].replace('status-', '')}`).textContent = count;
@@ -1325,8 +1518,11 @@
           const accent = document.createElement('div');
           accent.className = 'task-card-accent';
 
-          const body = document.createElement('div');
+          const body = document.createElement('details');
           body.className = 'task-card-body';
+
+          const summary = document.createElement('summary');
+          summary.className = 'task-card-summary';
 
           const head = document.createElement('div');
           head.className = 'task-card-head';
@@ -1338,6 +1534,33 @@
           const nama = document.createElement('div');
           nama.className = 'nama';
           nama.textContent = task.nama;
+
+          const summaryMeta = document.createElement('div');
+          summaryMeta.className = 'task-card-summary-meta';
+
+          const summaryAvatar = document.createElement('span');
+          summaryAvatar.className = 'pj-avatar';
+          summaryAvatar.textContent = (task.penanggung_jawab || '?').trim().charAt(0).toUpperCase();
+
+          const quickStatusSelect = document.createElement('select');
+          quickStatusSelect.className = 'quick-status-select';
+          quickStatusSelect.title = 'Ubah status cepat';
+          STATUSES.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s;
+            opt.textContent = s;
+            if (s === task.status) opt.selected = true;
+            quickStatusSelect.appendChild(opt);
+          });
+          quickStatusSelect.addEventListener('click', e => e.stopPropagation());
+          quickStatusSelect.addEventListener('mousedown', e => e.stopPropagation());
+
+          const chevron = document.createElement('span');
+          chevron.className = 'task-card-chevron';
+          chevron.textContent = '▾';
+
+          const details = document.createElement('div');
+          details.className = 'task-card-details';
 
           const pj = document.createElement('div');
           pj.className = 'pj';
@@ -1388,10 +1611,11 @@
             await fetchTasks();
           });
 
-          select.addEventListener('change', async () => {
-            const newStatus = select.value;
+          const statusSelects = [select, quickStatusSelect];
+          async function commitStatusChange(newStatus) {
             if (newStatus === 'Selesai' && !buktiInput.value.trim()) {
-              select.value = task.status;
+              statusSelects.forEach(s => { s.value = task.status; });
+              body.open = true;
               buktiInput.setCustomValidity(BUKTI_WAJIB_MSG);
               buktiInput.reportValidity();
               buktiInput.focus();
@@ -1403,20 +1627,29 @@
             if (error) {
               console.error('Gagal update status:', error);
               showToast('Gagal update status tugas.');
+              statusSelects.forEach(s => { s.value = task.status; });
               return;
             }
             await fetchTasks();
-          });
+          }
+          select.addEventListener('change', () => commitStatusChange(select.value));
+          quickStatusSelect.addEventListener('change', () => commitStatusChange(quickStatusSelect.value));
 
           head.appendChild(statusIcon);
           head.appendChild(nama);
-          body.appendChild(head);
-          body.appendChild(pj);
-          if (task.dibuat_oleh) body.appendChild(pembuat);
-          body.appendChild(timeline);
-          if (task.deskripsi) body.appendChild(deskripsi);
-          body.appendChild(select);
-          body.appendChild(buktiInput);
+          summaryMeta.appendChild(summaryAvatar);
+          summaryMeta.appendChild(quickStatusSelect);
+          summaryMeta.appendChild(chevron);
+          summary.appendChild(head);
+          summary.appendChild(summaryMeta);
+          body.appendChild(summary);
+
+          details.appendChild(pj);
+          if (task.dibuat_oleh) details.appendChild(pembuat);
+          details.appendChild(timeline);
+          if (task.deskripsi) details.appendChild(deskripsi);
+          details.appendChild(select);
+          details.appendChild(buktiInput);
 
           if (task.bukti) {
             const link = document.createElement('a');
@@ -1425,36 +1658,36 @@
             link.rel = 'noopener';
             link.className = 'bukti-link';
             link.textContent = '🔗 Lihat Bukti';
-            body.appendChild(link);
+            details.appendChild(link);
           }
 
           if (task.notif_status === 'terkirim') {
             const badge = document.createElement('span');
             badge.className = 'notif-status ok';
             badge.textContent = '✉️ Notifikasi terkirim ke PJ';
-            body.appendChild(badge);
+            details.appendChild(badge);
           } else if (task.notif_status === 'gagal') {
             const badge = document.createElement('span');
             badge.className = 'notif-status gagal';
             badge.textContent = '⚠️ Notifikasi email gagal terkirim';
-            body.appendChild(badge);
+            details.appendChild(badge);
           }
 
           if (task.calendar_status === 'created') {
             const calBadge = document.createElement('span');
             calBadge.className = 'calendar-status ok';
             calBadge.textContent = '📅 Ditambahkan ke Google Calendar PJ';
-            body.appendChild(calBadge);
+            details.appendChild(calBadge);
           } else if (task.calendar_status === 'failed') {
             const calBadge = document.createElement('span');
             calBadge.className = 'calendar-status gagal';
             calBadge.textContent = '⚠️ Gagal menambahkan ke Google Calendar';
-            body.appendChild(calBadge);
+            details.appendChild(calBadge);
           } else if (task.calendar_status === 'skipped_not_connected') {
             const calBadge = document.createElement('span');
             calBadge.className = 'calendar-status info';
             calBadge.textContent = 'PJ belum menghubungkan Google Calendar';
-            body.appendChild(calBadge);
+            details.appendChild(calBadge);
           }
 
           const currentUser = anggotaList.find(a => a.id === currentUserId);
@@ -1483,16 +1716,101 @@
                 reminderBtn.textContent = '🔔 Kirim Pengingat';
               }
             });
-            body.appendChild(reminderBtn);
+            details.appendChild(reminderBtn);
           }
 
+          if (isCreator && task.status !== 'Selesai') {
+            const cancelBtn = document.createElement('button');
+            cancelBtn.type = 'button';
+            cancelBtn.className = 'cancel-btn';
+            cancelBtn.textContent = '🗙 Batalkan Tugas';
+            cancelBtn.addEventListener('click', async () => {
+              const ok = window.confirm(`Batalkan tugas "${task.nama}"? Penanggung jawab (${task.penanggung_jawab}) akan diberi tahu lewat email.`);
+              if (!ok) return;
+              cancelBtn.disabled = true;
+              cancelBtn.textContent = 'Membatalkan…';
+              try {
+                const res = await fetch('/api/task/cancel', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ taskId: task.id })
+                });
+                if (!res.ok) throw new Error('Gagal membatalkan tugas');
+                showToast(`Tugas "${task.nama}" dibatalkan, ${task.penanggung_jawab} sudah diberi tahu.`);
+                await fetchTasks();
+              } catch (err) {
+                console.error('Gagal membatalkan tugas:', err);
+                showToast('Gagal membatalkan tugas.');
+                cancelBtn.disabled = false;
+                cancelBtn.textContent = '🗙 Batalkan Tugas';
+              }
+            });
+            details.appendChild(cancelBtn);
+          }
+
+          body.appendChild(details);
           card.appendChild(accent);
           card.appendChild(body);
           list.appendChild(card);
         });
       });
 
+      renderDibatalkan(visibleTasks);
+
       if (currentView === 'gantt') renderGantt();
+    }
+
+    function renderDibatalkan(visibleTasks) {
+      const canceled = visibleTasks.filter(t => t.status === 'Dibatalkan');
+      const summary = document.getElementById('dibatalkan-summary');
+      const list = document.getElementById('dibatalkan-list');
+      summary.textContent = `🗑️ Tugas Dibatalkan (${canceled.length})`;
+      list.innerHTML = '';
+
+      if (canceled.length === 0) {
+        const hint = document.createElement('p');
+        hint.className = 'empty-hint';
+        hint.textContent = 'Belum ada tugas yang dibatalkan.';
+        list.appendChild(hint);
+        return;
+      }
+
+      canceled.forEach(task => {
+        const row = document.createElement('div');
+        row.className = 'dibatalkan-row';
+
+        const info = document.createElement('div');
+        info.className = 'dibatalkan-info';
+        const nameEl = document.createElement('span');
+        nameEl.className = 'dibatalkan-nama';
+        nameEl.textContent = task.nama;
+        const pjEl = document.createElement('span');
+        pjEl.className = 'dibatalkan-pj';
+        pjEl.textContent = task.penanggung_jawab || '';
+        info.appendChild(nameEl);
+        info.appendChild(pjEl);
+
+        const restoreBtn = document.createElement('button');
+        restoreBtn.type = 'button';
+        restoreBtn.className = 'restore-btn';
+        restoreBtn.textContent = '↩️ Pulihkan';
+        restoreBtn.addEventListener('click', async () => {
+          restoreBtn.disabled = true;
+          const { error } = await db.from('tugas').update({ status: 'Belum Mulai' }).eq('id', task.id);
+          if (error) {
+            console.error('Gagal memulihkan tugas:', error);
+            showToast('Gagal memulihkan tugas.');
+            restoreBtn.disabled = false;
+            return;
+          }
+          showToast(`Tugas "${task.nama}" dipulihkan ke Belum Mulai.`);
+          await fetchTasks();
+        });
+
+        row.appendChild(info);
+        row.appendChild(restoreBtn);
+        list.appendChild(row);
+      });
     }
 
     // --- Gantt Chart ---
@@ -1506,9 +1824,11 @@
 
     function renderGantt() {
       const container = document.getElementById('gantt-chart');
+      const prevScroll = container.querySelector('.gantt-timeline-scroll');
+      const savedScrollLeft = prevScroll ? prevScroll.scrollLeft : null;
       container.innerHTML = '';
 
-      const visibleTasks = getVisibleTasks();
+      const visibleTasks = getVisibleTasks().filter(t => t.status !== 'Dibatalkan');
       if (visibleTasks.length === 0) {
         const hint = document.createElement('p');
         hint.className = 'empty-hint';
@@ -1632,6 +1952,26 @@
       body.appendChild(labelsCol);
       body.appendChild(scrollWrap);
       container.appendChild(body);
+
+      if (savedScrollLeft !== null) {
+        // Re-render (mis. update realtime) — pertahankan posisi scroll user, jangan direset.
+        scrollWrap.scrollLeft = savedScrollLeft;
+      } else {
+        // Render pertama kali Gantt dibuka — scroll ke minggu berjalan supaya tidak
+        // mulai dari area kosong kalau ada tugas lama yang menarik rangeStart mundur.
+        const viewportWidth = scrollWrap.clientWidth || 0;
+        const maxScroll = Math.max(0, totalWidth - viewportWidth);
+        let targetScroll;
+        if (today < rangeStart) {
+          targetScroll = 0;
+        } else if (today > rangeEnd) {
+          targetScroll = maxScroll;
+        } else {
+          const todayOffsetPx = Math.round((today - rangeStart) / DAY_MS) * DAY_W;
+          targetScroll = Math.min(maxScroll, Math.max(0, todayOffsetPx - viewportWidth / 2));
+        }
+        scrollWrap.scrollLeft = targetScroll;
+      }
 
       if (withoutDates.length > 0) {
         const note = document.createElement('p');
