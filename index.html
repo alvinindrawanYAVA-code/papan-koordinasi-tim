@@ -799,6 +799,9 @@
     font-weight: 700;
     color: var(--text-muted);
     border-left: 1px solid var(--border);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
   .gantt-track-row {
@@ -1883,17 +1886,19 @@
 
     // --- Gantt Chart ---
 
-    function quarterStart(date) {
+    const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+    function monthStart(date) {
       const d = new Date(date);
-      return new Date(d.getFullYear(), Math.floor(d.getMonth() / 3) * 3, 1);
+      return new Date(d.getFullYear(), d.getMonth(), 1);
     }
 
-    // Awal kuartal berikutnya (batas atas eksklusif) -- lebih gampang dipakai buat
-    // hitung jumlah hari dalam kuartal (termasuk kuartal dgn Februari kabisat) tanpa
-    // perlu tabel jumlah hari per bulan manual.
-    function quarterEndExclusive(date) {
-      const start = quarterStart(date);
-      return new Date(start.getFullYear(), start.getMonth() + 3, 1);
+    // Awal bulan berikutnya (batas atas eksklusif) -- lebih gampang dipakai buat
+    // hitung jumlah hari dalam bulan (termasuk Februari kabisat) tanpa perlu tabel
+    // jumlah hari per bulan manual.
+    function monthEndExclusive(date) {
+      const start = monthStart(date);
+      return new Date(start.getFullYear(), start.getMonth() + 1, 1);
     }
 
     function renderGantt() {
@@ -1924,17 +1929,18 @@
       }
 
       const DAY_MS = 24 * 60 * 60 * 1000;
-      // Skala kuartalan (zoom-out) -- cukup kecil supaya beberapa kuartal muat
-      // sekaligus tanpa geser horizontal panjang, beda dari skala mingguan yang lama
-      // (32px/hari). Tugas berdurasi pendek tetap kelihatan berkat lebar minimum
-      // bar yang sudah ada di bawah (46px), cuma detail di dalamnya jadi lebih ringkas.
-      const DAY_W = 3;
+      // Skala zoom-out per bulan -- lebih kecil dari skala kuartalan sebelumnya (3px/hari)
+      // supaya makin banyak bulan muat sekaligus tanpa geser horizontal panjang. Tugas
+      // berdurasi pendek tetap kelihatan berkat lebar minimum bar di bawah (46px).
+      const DAY_W = 2;
 
       const minStart = new Date(Math.min(...withDates.map(t => parseDate(t.tanggal_mulai).getTime())));
       const maxEnd = new Date(Math.max(...withDates.map(t => parseDate(t.tanggal_selesai).getTime())));
 
-      const rangeStart = quarterStart(minStart);
-      const rangeEndExclusive = quarterEndExclusive(maxEnd);
+      // Rentang dimulai dari awal BULAN tugas paling awal (bukan awal kuartal) supaya
+      // tidak ada bulan kosong yang ikut terpadding di depan timeline.
+      const rangeStart = monthStart(minStart);
+      const rangeEndExclusive = monthEndExclusive(maxEnd);
       const rangeEnd = new Date(rangeEndExclusive.getTime() - DAY_MS);
 
       const totalDays = Math.round((rangeEnd - rangeStart) / DAY_MS) + 1;
@@ -1961,13 +1967,12 @@
       ticksRow.className = 'gantt-ticks-row';
       let tickCursor = new Date(rangeStart);
       while (tickCursor < rangeEndExclusive) {
-        const tickEndExclusive = quarterEndExclusive(tickCursor);
-        const daysInQuarter = Math.round((tickEndExclusive - tickCursor) / DAY_MS);
+        const tickEndExclusive = monthEndExclusive(tickCursor);
+        const daysInMonth = Math.round((tickEndExclusive - tickCursor) / DAY_MS);
         const tick = document.createElement('div');
         tick.className = 'gantt-tick';
-        tick.style.width = (daysInQuarter * DAY_W) + 'px';
-        const quarterNumber = Math.floor(tickCursor.getMonth() / 3) + 1;
-        tick.textContent = `Q${quarterNumber} ${tickCursor.getFullYear()}`;
+        tick.style.width = (daysInMonth * DAY_W) + 'px';
+        tick.textContent = `${MONTH_SHORT[tickCursor.getMonth()]} ${tickCursor.getFullYear()}`;
         ticksRow.appendChild(tick);
         tickCursor = tickEndExclusive;
       }
