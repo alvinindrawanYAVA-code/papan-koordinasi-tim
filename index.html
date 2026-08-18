@@ -1678,6 +1678,7 @@
               buktiInput.focus();
               return;
             }
+            const wasAlreadySelesai = task.status === 'Selesai';
             const { error } = await db.from('tugas')
               .update({ status: newStatus, bukti: buktiInput.value.trim() || null })
               .eq('id', task.id);
@@ -1686,6 +1687,13 @@
               showToast('Gagal update status tugas.');
               statusSelects.forEach(s => { s.value = task.status; });
               return;
+            }
+            if (newStatus === 'Selesai' && !wasAlreadySelesai) {
+              fetch('/api/task/complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ taskId: task.id })
+              }).catch(err => console.error('Gagal kirim notifikasi selesai ke pembuat tugas:', err));
             }
             await fetchTasks();
           }
