@@ -721,7 +721,7 @@
   }
 
   .gantt-corner {
-    height: 32px;
+    height: 44px;
     border-top: none;
   }
 
@@ -770,27 +770,51 @@
 
   .gantt-timeline-inner {
     position: relative;
-    background-image: repeating-linear-gradient(to right, var(--border) 0, var(--border) 1px, transparent 1px, transparent 14px);
-    background-position: 0 32px;
+    background-image: repeating-linear-gradient(to right, var(--border) 0, var(--border) 1px, transparent 1px, transparent calc(var(--gantt-day-w, 22px) * 7));
+    background-position: 0 44px;
   }
 
-  .gantt-ticks-row {
+  .gantt-ticks-month-row {
     display: flex;
-    height: 32px;
+    height: 20px;
     border-bottom: 1px solid var(--border);
   }
 
-  .gantt-tick {
+  .gantt-tick-month {
     flex-shrink: 0;
     box-sizing: border-box;
-    padding: 6px 0 0 6px;
-    font-size: 0.72rem;
+    padding: 3px 0 0 6px;
+    font-size: 0.68rem;
     font-weight: 700;
     color: var(--text-muted);
     border-left: 1px solid var(--border);
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+  }
+
+  .gantt-ticks-day-row {
+    display: flex;
+    height: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .gantt-tick-day {
+    flex-shrink: 0;
+    box-sizing: border-box;
+    text-align: center;
+    padding-top: 5px;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+  }
+
+  .gantt-tick-day.is-month-start {
+    border-left: 1px solid var(--border);
+  }
+
+  .gantt-tick-day.is-today {
+    font-weight: 800;
+    color: var(--accent);
   }
 
   .gantt-track-row {
@@ -870,7 +894,7 @@
 
   .gantt-today-line {
     position: absolute;
-    top: 32px;
+    top: 44px;
     width: 2px;
     background: var(--danger);
     z-index: 2;
@@ -1059,6 +1083,10 @@
       position: static;
       flex-basis: auto;
       width: 100%;
+    }
+    .main {
+      width: 100%;
+      min-width: 0;
     }
     .sidebar-nav {
       flex-direction: row;
@@ -1942,10 +1970,10 @@
       }
 
       const DAY_MS = 24 * 60 * 60 * 1000;
-      // Skala zoom-out per bulan -- lebih kecil dari skala kuartalan sebelumnya (3px/hari)
-      // supaya makin banyak bulan muat sekaligus tanpa geser horizontal panjang. Tugas
-      // berdurasi pendek tetap kelihatan berkat lebar minimum bar di bawah (46px).
-      const DAY_W = 2;
+      // Skala cukup besar (22px/hari) supaya nomor tanggal di header (1-31) selalu
+      // kebaca jelas -- konsekuensinya rentang yang kelihatan per layar jadi lebih
+      // sempit (~1-2 minggu), perlu lebih sering geser buat lihat bulan lain.
+      const DAY_W = 22;
 
       const minStart = new Date(Math.min(...withDates.map(t => parseDate(t.tanggal_mulai).getTime())));
       const maxEnd = new Date(Math.max(...withDates.map(t => parseDate(t.tanggal_selesai).getTime())));
@@ -1979,21 +2007,42 @@
       const inner = document.createElement('div');
       inner.className = 'gantt-timeline-inner';
       inner.style.width = totalWidth + 'px';
+      inner.style.setProperty('--gantt-day-w', DAY_W + 'px');
 
-      const ticksRow = document.createElement('div');
-      ticksRow.className = 'gantt-ticks-row';
-      let tickCursor = new Date(rangeStart);
-      while (tickCursor < rangeEndExclusive) {
-        const tickEndExclusive = monthEndExclusive(tickCursor);
-        const daysInMonth = Math.round((tickEndExclusive - tickCursor) / DAY_MS);
+      // Header 2 baris: baris bulan (buat konteks, tetap satu blok per bulan) +
+      // baris tanggal per hari (angka 1-31, biar tetap kebaca meski skalanya kecil
+      // dibanding lebar bulan itu sendiri).
+      const monthRow = document.createElement('div');
+      monthRow.className = 'gantt-ticks-month-row';
+      let monthCursor = new Date(rangeStart);
+      while (monthCursor < rangeEndExclusive) {
+        const monthEndEx = monthEndExclusive(monthCursor);
+        const daysInMonth = Math.round((monthEndEx - monthCursor) / DAY_MS);
         const tick = document.createElement('div');
-        tick.className = 'gantt-tick';
+        tick.className = 'gantt-tick-month';
         tick.style.width = (daysInMonth * DAY_W) + 'px';
-        tick.textContent = `${MONTH_SHORT[tickCursor.getMonth()]} ${tickCursor.getFullYear()}`;
-        ticksRow.appendChild(tick);
-        tickCursor = tickEndExclusive;
+        tick.textContent = `${MONTH_SHORT[monthCursor.getMonth()]} ${monthCursor.getFullYear()}`;
+        monthRow.appendChild(tick);
+        monthCursor = monthEndEx;
       }
-      inner.appendChild(ticksRow);
+      inner.appendChild(monthRow);
+
+      const todayForHeader = new Date();
+      todayForHeader.setHours(0, 0, 0, 0);
+      const dayRow = document.createElement('div');
+      dayRow.className = 'gantt-ticks-day-row';
+      let dayCursor = new Date(rangeStart);
+      while (dayCursor < rangeEndExclusive) {
+        const tick = document.createElement('div');
+        tick.className = 'gantt-tick-day';
+        if (dayCursor.getDate() === 1) tick.classList.add('is-month-start');
+        if (dayCursor.getTime() === todayForHeader.getTime()) tick.classList.add('is-today');
+        tick.style.width = DAY_W + 'px';
+        tick.textContent = String(dayCursor.getDate());
+        dayRow.appendChild(tick);
+        dayCursor = new Date(dayCursor.getTime() + DAY_MS);
+      }
+      inner.appendChild(dayRow);
 
       sorted.forEach(task => {
         const statusClass = STATUS_CLASS[task.status] || '';
