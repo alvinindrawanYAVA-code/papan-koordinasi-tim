@@ -825,7 +825,6 @@
     position: absolute;
     top: 8px;
     height: 44px;
-    min-width: 88px;
     border-radius: 999px;
     display: flex;
     align-items: center;
@@ -2077,7 +2076,12 @@
         const bar = document.createElement('div');
         bar.className = `gantt-bar ${statusClass}`;
         bar.style.left = (startOffset * DAY_W) + 'px';
-        bar.style.width = Math.max(spanDays * DAY_W - 4, 88) + 'px';
+        // Lebar bar HARUS akurat mengikuti jumlah hari asli tugas -- jangan dipaksa
+        // lebih lebar dari itu (floor lama 88px salah di skala 22px/hari ini, bikin
+        // tugas 1-3 hari kelihatan "nyerempet" ke tanggal yang bukan miliknya).
+        // Konten di dalam bar (avatar/tanggal/badge) yang menyesuaikan lewat
+        // overflow:hidden kalau tugasnya memang pendek, bukan sebaliknya.
+        bar.style.width = Math.max(spanDays * DAY_W - 4, 12) + 'px';
         bar.title = `${task.nama} — ${formatTanggal(task.tanggal_mulai)} – ${formatTanggal(task.tanggal_selesai)} (${task.status})`;
 
         const barAvatar = document.createElement('span');
