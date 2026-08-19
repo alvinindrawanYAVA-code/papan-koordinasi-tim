@@ -1,6 +1,7 @@
 const { sbSelect } = require('../../lib/supabaseAdmin');
 const { sendEmail } = require('../../lib/emailjs');
 const { todayWita, diffDays, formatTanggal } = require('../../lib/time');
+const { requireAuth } = require('../../lib/auth');
 
 const EMAILJS_RATE_LIMIT_MS = 1100; // EmailJS batasi 1 request/detik
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -21,11 +22,19 @@ module.exports = async (req, res) => {
     return;
   }
 
+  const auth = await requireAuth(req, res);
+  if (!auth) return;
+
   try {
     const tasks = await sbSelect('tugas', { id: `eq.${taskId}`, select: '*' });
     const task = tasks && tasks[0];
     if (!task) {
       res.status(404).json({ error: 'Tugas tidak ditemukan' });
+      return;
+    }
+    // Sama seperti task/cancel.js -- cuma pembuat tugas yang boleh kirim pengingat.
+    if (auth.anggota.nama !== task.dibuat_oleh) {
+      res.status(403).json({ error: 'Cuma pembuat tugas yang boleh mengirim pengingat untuk tugas ini' });
       return;
     }
     const pjRows = await sbSelect('tugas_pj', { tugas_id: `eq.${taskId}`, select: '*' });

@@ -2,6 +2,7 @@ const { sbSelect, sbUpdate } = require('../../lib/supabaseAdmin');
 const { sendEmail } = require('../../lib/emailjs');
 const { cancelTaskCalendarEvent, cancelCreatorCalendarEvent } = require('../../lib/google');
 const { formatTanggal } = require('../../lib/time');
+const { requireAuth } = require('../../lib/auth');
 
 // Dipicu dari tombol "Batalkan Tugas" di kartu tugas (hanya pembuat tugas
 // yang melihat tombolnya di UI). Soft-cancel: status diubah jadi 'Dibatalkan',
@@ -21,11 +22,21 @@ module.exports = async (req, res) => {
     return;
   }
 
+  const auth = await requireAuth(req, res);
+  if (!auth) return;
+
   try {
     const tasks = await sbSelect('tugas', { id: `eq.${taskId}`, select: '*' });
     const task = tasks && tasks[0];
     if (!task) {
       res.status(404).json({ error: 'Tugas tidak ditemukan' });
+      return;
+    }
+    // Cuma pembuat tugas yang boleh membatalkan -- dulu cuma gate UI (tombol
+    // disembunyikan kalau bukan pembuat), sekarang ditegakkan di server juga
+    // karena endpoint ini pakai service_role (bypass RLS).
+    if (auth.anggota.nama !== task.dibuat_oleh) {
+      res.status(403).json({ error: 'Cuma pembuat tugas yang boleh membatalkan tugas ini' });
       return;
     }
     if (task.status === 'Dibatalkan') {

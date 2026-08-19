@@ -1,6 +1,7 @@
 const { sbSelect } = require('../../lib/supabaseAdmin');
 const { sendEmail } = require('../../lib/emailjs');
 const { formatTanggal, todayWita, diffDays } = require('../../lib/time');
+const { requireAuth } = require('../../lib/auth');
 
 // Bangun blok "Selesai Pada (Aktual)" + badge "Ketepatan Waktu" (dibandingkan
 // terhadap tenggat asli/task.tanggal_selesai). Cuma dipakai di notifikasi
@@ -50,6 +51,9 @@ module.exports = async (req, res) => {
     return;
   }
 
+  const auth = await requireAuth(req, res);
+  if (!auth) return;
+
   try {
     const tasks = await sbSelect('tugas', { id: `eq.${taskId}`, select: '*' });
     const task = tasks && tasks[0];
@@ -57,6 +61,18 @@ module.exports = async (req, res) => {
       res.status(404).json({ error: 'Tugas tidak ditemukan' });
       return;
     }
+
+    const pjRows = await sbSelect('tugas_pj', { tugas_id: `eq.${taskId}`, select: '*' });
+    // Beda dari cancel/reminder (creator-only) -- ini boleh dipicu penanggung
+    // jawab ATAU pembuat, karena memang assignee sendiri yang menandai tugas
+    // selesai (predikat sama seperti RLS tugas_update di index.html).
+    const isAssignee = (pjRows || []).some(p => p.anggota_id === auth.anggota.id);
+    const isCreator = auth.anggota.nama === task.dibuat_oleh;
+    if (!isAssignee && !isCreator) {
+      res.status(403).json({ error: 'Cuma penanggung jawab atau pembuat tugas yang boleh menandai tugas ini selesai' });
+      return;
+    }
+
     if (!task.dibuat_oleh) {
       res.status(200).json({ ok: true, emailSent: false, reason: 'no_creator' });
       return;
@@ -69,7 +85,6 @@ module.exports = async (req, res) => {
       return;
     }
 
-    const pjRows = await sbSelect('tugas_pj', { tugas_id: `eq.${taskId}`, select: '*' });
     const pjNames = (pjRows || []).map(p => p.nama).join(', ') || 'Penanggung jawab';
 
     // Link bukti sekarang tampil sebagai tombol tersendiri (bukti_button_html),

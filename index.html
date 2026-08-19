@@ -48,6 +48,82 @@
     padding: 24px 16px 64px;
   }
 
+  /* display:flex di atas mengalahkan default UA [hidden] (author style menang atas
+     UA style walau specificity-nya sama) -- override eksplisit di sini supaya
+     app-shell benar-benar hilang selama login-gate ditampilkan. */
+  .app-shell[hidden] {
+    display: none;
+  }
+
+  .login-gate {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .login-card {
+    background: var(--surface);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    padding: 40px 32px;
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .login-card .brand {
+    margin: 0 0 12px;
+    font-size: 1.3rem;
+  }
+
+  .login-card p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin: 0 0 24px;
+  }
+
+  .login-card .btn-primary {
+    width: 100%;
+    height: 44px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .login-card .btn-primary:hover {
+    background: #4338ca;
+  }
+
+  .login-error {
+    margin: 16px 0 0;
+    color: var(--danger);
+    font-size: 0.85rem;
+  }
+
+  .signout-btn {
+    margin-top: 12px;
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .signout-btn:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
   .sidebar {
     flex: 0 0 240px;
     position: sticky;
@@ -458,8 +534,9 @@
     color: var(--danger);
   }
 
-  .anggota-chip a.google-connect,
+  .anggota-chip button.google-connect,
   .anggota-chip button.google-disconnect {
+    font: inherit;
     font-size: 0.75rem;
     font-weight: 600;
     text-decoration: none;
@@ -470,7 +547,7 @@
     white-space: nowrap;
   }
 
-  .anggota-chip a.google-connect {
+  .anggota-chip button.google-connect {
     color: var(--accent);
     background: var(--accent-soft);
   }
@@ -480,9 +557,15 @@
     background: var(--selesai-soft);
   }
 
-  .anggota-chip a.google-connect:hover,
+  .anggota-chip button.google-connect:hover,
   .anggota-chip button.google-disconnect:hover {
     filter: brightness(0.95);
+  }
+
+  .anggota-chip button.google-connect:disabled,
+  .anggota-chip button.google-disconnect:disabled {
+    opacity: 0.6;
+    cursor: default;
   }
 
   .section-title {
@@ -1271,7 +1354,15 @@
 </style>
 </head>
 <body>
-  <div class="app-shell">
+  <div id="login-gate" class="login-gate" hidden>
+    <div class="login-card">
+      <div class="brand">Papan Koordinasi Tim</div>
+      <p>Masuk pakai akun Google kantor (@yavabali.com) untuk melanjutkan.</p>
+      <button id="google-signin-btn" type="button" class="btn-primary">🔐 Masuk dengan Google</button>
+      <p id="login-error" class="login-error" hidden></p>
+    </div>
+  </div>
+  <div class="app-shell" hidden>
     <aside class="sidebar">
       <div class="brand">Papan Koordinasi Tim</div>
       <div class="sidebar-user">
@@ -1287,6 +1378,7 @@
             <option value="both">🔀 Keduanya</option>
           </select>
         </div>
+        <button id="signout-btn" type="button" class="signout-btn">🚪 Keluar</button>
       </div>
       <nav class="sidebar-nav">
         <a href="#section-ringkasan" data-nav="ringkasan">🏠 Ringkasan</a>
@@ -1487,6 +1579,48 @@
     };
     const db = supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.publishableKey);
 
+    // --- Login (Sign in with Google, domain kantor) ---
+    // Sesi dikelola penuh oleh Supabase Auth -- terpisah total dari OAuth Google
+    // Calendar (lib/google.js/google_tokens) yang tetap jalan lewat flow-nya sendiri.
+    async function apiFetch(url, options = {}) {
+      const { data } = await db.auth.getSession();
+      const token = data.session && data.session.access_token;
+      const headers = Object.assign({}, options.headers || {});
+      if (token) headers.Authorization = `Bearer ${token}`;
+      return fetch(url, Object.assign({}, options, { headers }));
+    }
+
+    async function handleSignIn() {
+      const { error } = await db.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: location.origin,
+          queryParams: { hd: 'yavabali.com', prompt: 'select_account' }
+        }
+      });
+      if (error) {
+        const el = document.getElementById('login-error');
+        el.textContent = 'Gagal memulai login Google. Coba lagi.';
+        el.hidden = false;
+      }
+    }
+    document.getElementById('google-signin-btn').addEventListener('click', handleSignIn);
+    document.getElementById('signout-btn').addEventListener('click', () => db.auth.signOut());
+
+    let booted = false;
+    let currentSessionEmail = null;
+    function applyAuthState(session) {
+      document.getElementById('login-gate').hidden = !!session;
+      document.querySelector('.app-shell').hidden = !session;
+      if (!session) return;
+      currentSessionEmail = session.user.email;
+      if (!booted) {
+        booted = true;
+        boot();
+      }
+    }
+    db.auth.onAuthStateChange((_event, session) => applyAuthState(session));
+
     const STATUSES = ['Belum Mulai', 'Dikerjakan', 'Selesai'];
     const BUKTI_WAJIB_MSG = 'Isi link bukti kerja dulu sebelum menandai Selesai.';
 
@@ -1653,7 +1787,7 @@
             googleEl.addEventListener('click', async () => {
               googleEl.disabled = true;
               try {
-                const res = await fetch('/api/google/disconnect', {
+                const res = await apiFetch('/api/google/disconnect', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ anggotaId: a.id })
@@ -1668,12 +1802,27 @@
               }
             });
           } else {
-            googleEl = document.createElement('a');
-            googleEl.href = `/api/google/connect?anggotaId=${a.id}`;
-            googleEl.target = '_blank';
-            googleEl.rel = 'noopener';
+            googleEl = document.createElement('button');
+            googleEl.type = 'button';
             googleEl.className = 'google-connect';
             googleEl.textContent = '📅 Hubungkan Google Calendar';
+            // Endpoint-nya sekarang butuh Authorization header (dicek server-side
+            // siapa yang boleh connect), jadi tidak bisa lagi <a href> biasa --
+            // ambil URL consent-nya dulu lewat apiFetch, baru window.open.
+            googleEl.addEventListener('click', async () => {
+              googleEl.disabled = true;
+              try {
+                const res = await apiFetch(`/api/google/connect?anggotaId=${a.id}`);
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.url) throw new Error(data.error || 'Gagal memulai koneksi Google Calendar');
+                window.open(data.url, '_blank', 'noopener');
+              } catch (err) {
+                console.error('Gagal memulai koneksi Google:', err);
+                showToast('Gagal menghubungkan Google Calendar.');
+              } finally {
+                googleEl.disabled = false;
+              }
+            });
           }
 
           const removeBtn = document.createElement('button');
@@ -1961,7 +2110,7 @@
               return;
             }
             if (newStatus === 'Selesai' && !wasAlreadySelesai) {
-              fetch('/api/task/complete', {
+              apiFetch('/api/task/complete', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ taskId: task.id })
@@ -2060,7 +2209,7 @@
               reminderBtn.disabled = true;
               reminderBtn.textContent = 'Mengirim…';
               try {
-                const res = await fetch('/api/reminder/send', {
+                const res = await apiFetch('/api/reminder/send', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ taskId: task.id })
@@ -2089,7 +2238,7 @@
               cancelBtn.disabled = true;
               cancelBtn.textContent = 'Membatalkan…';
               try {
-                const res = await fetch('/api/task/cancel', {
+                const res = await apiFetch('/api/task/cancel', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ taskId: task.id })
@@ -2574,7 +2723,7 @@
 
       await fetchTasks();
       sendTaskNotification(newTask);
-      fetch('/api/google/create-event', {
+      apiFetch('/api/google/create-event', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ taskId: newTask.id })
@@ -2583,24 +2732,53 @@
         .catch(err => console.error('Gagal buat event Google Calendar:', err));
     });
 
-    db.channel('papan-koordinasi-sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tugas' }, () => fetchTasks())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tugas_pj' }, () => fetchTasks())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'anggota' }, () => fetchAnggota())
-      .subscribe();
-
-    const googleParam = new URLSearchParams(location.search).get('google');
-    if (googleParam === 'connected') {
-      showToast('Google Calendar berhasil terhubung.');
-    } else if (googleParam === 'error') {
-      showToast('Gagal menghubungkan Google Calendar. Coba lagi.');
+    // Default-select "Lihat Sebagai" & "Dibuat Oleh" ke anggota yang emailnya cocok
+    // dengan akun yang login -- cuma kalau belum ada pilihan tersimpan (localStorage
+    // kosong / dropdown belum diisi), supaya tidak menimpa pilihan eksplisit user.
+    // Ini murni kenyamanan UI, bukan batas keamanan -- penegakan sungguhan ada di
+    // server (RLS + lib/auth.js), jadi dropdownnya tetap boleh diganti manual.
+    function applyDefaultCurrentUser(email) {
+      if (!email) return;
+      const match = anggotaList.find(a => a.email === email);
+      if (!match) return;
+      if (!currentUserId) {
+        currentUserId = match.id;
+        localStorage.setItem('currentUserId', currentUserId);
+        populateCurrentUserSelect();
+        updateRoleSelectVisibility();
+        render();
+      }
+      const dibuatOlehSelect = document.getElementById('dibuat-oleh');
+      if (dibuatOlehSelect && !dibuatOlehSelect.value) {
+        dibuatOlehSelect.value = match.id;
+      }
     }
-    if (googleParam) {
-      history.replaceState(null, '', location.pathname);
-    }
 
-    fetchAnggota();
-    fetchTasks();
+    // Dipanggil sekali begitu sesi login terkonfirmasi (lihat applyAuthState di
+    // atas) -- sebelumnya ini kode top-level yang langsung jalan begitu skrip
+    // dimuat, sekarang ditunda sampai user terbukti login (booted flag mencegah
+    // dobel-subscribe Realtime kalau onAuthStateChange fire lagi saat token-refresh).
+    async function boot() {
+      db.channel('papan-koordinasi-sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tugas' }, () => fetchTasks())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tugas_pj' }, () => fetchTasks())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'anggota' }, () => fetchAnggota())
+        .subscribe();
+
+      const googleParam = new URLSearchParams(location.search).get('google');
+      if (googleParam === 'connected') {
+        showToast('Google Calendar berhasil terhubung.');
+      } else if (googleParam === 'error') {
+        showToast('Gagal menghubungkan Google Calendar. Coba lagi.');
+      }
+      if (googleParam) {
+        history.replaceState(null, '', location.pathname);
+      }
+
+      await fetchAnggota();
+      applyDefaultCurrentUser(currentSessionEmail);
+      fetchTasks();
+    }
   </script>
 </body>
 </html>

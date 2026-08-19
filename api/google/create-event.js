@@ -1,11 +1,15 @@
 const { sbSelect } = require('../../lib/supabaseAdmin');
 const { syncTaskCalendarEvent, syncCreatorCalendarEvent } = require('../../lib/google');
+const { requireAuth } = require('../../lib/auth');
 
 // Dipanggil (fire-and-forget) dari index.html tepat setelah 1 tugas berhasil
 // dibuat. Selalu ambil ulang data tugas dari Supabase pakai taskId (tidak
 // percaya field dari client), dan aman dipanggil berkali-kali (idempotent).
 module.exports = async (req, res) => {
   try {
+    const auth = await requireAuth(req, res);
+    if (!auth) return;
+
     const { taskId } = req.body || {};
     if (!taskId) {
       res.status(400).json({ error: 'taskId wajib diisi' });

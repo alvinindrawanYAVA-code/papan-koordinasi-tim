@@ -1,10 +1,19 @@
 const { sbSelect, sbUpdate } = require('../../lib/supabaseAdmin');
+const { requireAuth } = require('../../lib/auth');
 
 module.exports = async (req, res) => {
   try {
+    const auth = await requireAuth(req, res);
+    if (!auth) return;
+
     const { anggotaId } = req.body || {};
     if (!anggotaId) {
       res.status(400).json({ error: 'anggotaId wajib diisi' });
+      return;
+    }
+    // Cuma boleh memutuskan koneksi Google Calendar milik sendiri.
+    if (anggotaId !== auth.anggota.id) {
+      res.status(403).json({ error: 'Cuma boleh memutuskan koneksi Google Calendar milik sendiri' });
       return;
     }
 
