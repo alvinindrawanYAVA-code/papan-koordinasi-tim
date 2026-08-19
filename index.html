@@ -340,6 +340,15 @@
     box-shadow: inset 0 0 0 1px var(--accent);
   }
 
+  form#task-form button.pj-chip-option.pj-chip-all {
+    border-style: dashed;
+    font-weight: 600;
+  }
+
+  form#task-form button.pj-chip-option.pj-chip-all.selected {
+    border-style: solid;
+  }
+
   .anggota-list {
     display: flex;
     flex-direction: column;
@@ -1599,6 +1608,28 @@
       selectedPjIds = new Set([...selectedPjIds].filter(id => anggotaList.some(a => a.id === id)));
       const group = document.getElementById('penanggung-jawab-group');
       group.innerHTML = '';
+
+      // Chip "Semua Tim" -- toggle assign ke semua anggota sekaligus (termasuk
+      // siapa pun yang nanti dipilih jadi pembuat tugas, karena dia juga ada
+      // di anggotaList yang sama, tidak dikecualikan).
+      const allBtn = document.createElement('button');
+      allBtn.type = 'button';
+      allBtn.className = 'pj-chip-option pj-chip-all';
+      allBtn.textContent = '🌐 Semua Tim';
+      function syncAllBtn() {
+        const allSelected = anggotaList.length > 0 && selectedPjIds.size === anggotaList.length;
+        allBtn.classList.toggle('selected', allSelected);
+        allBtn.setAttribute('aria-pressed', allSelected ? 'true' : 'false');
+      }
+      allBtn.addEventListener('click', () => {
+        const allSelected = anggotaList.length > 0 && selectedPjIds.size === anggotaList.length;
+        if (allSelected) selectedPjIds.clear();
+        else anggotaList.forEach(a => selectedPjIds.add(a.id));
+        populatePjMultiselect();
+      });
+      syncAllBtn();
+      group.appendChild(allBtn);
+
       anggotaList.forEach(a => {
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -1610,6 +1641,7 @@
           else selectedPjIds.add(a.id);
           btn.classList.toggle('selected');
           btn.setAttribute('aria-pressed', selectedPjIds.has(a.id) ? 'true' : 'false');
+          syncAllBtn();
         });
         group.appendChild(btn);
       });
