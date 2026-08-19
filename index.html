@@ -311,10 +311,11 @@
     gap: 8px;
   }
 
-  .pj-chip-option {
+  form#task-form button.pj-chip-option {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    height: auto;
     padding: 8px 14px;
     border-radius: 999px;
     border: 1px solid var(--border);
@@ -322,18 +323,21 @@
     color: var(--text);
     font-family: inherit;
     font-size: 0.85rem;
+    font-weight: 400;
     cursor: pointer;
   }
 
-  .pj-chip-option:hover {
+  form#task-form button.pj-chip-option:hover {
     border-color: var(--accent);
+    background: var(--bg);
   }
 
-  .pj-chip-option.selected {
+  form#task-form button.pj-chip-option.selected {
     background: var(--accent-soft);
     border-color: var(--accent);
     color: var(--accent);
-    font-weight: 600;
+    font-weight: 700;
+    box-shadow: inset 0 0 0 1px var(--accent);
   }
 
   .anggota-list {
