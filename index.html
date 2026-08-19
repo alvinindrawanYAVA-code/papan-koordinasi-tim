@@ -764,6 +764,26 @@
   .task-card.status-dikerjakan .quick-status-select { background: var(--dikerjakan-soft); }
   .task-card.status-selesai .quick-status-select { background: var(--selesai-soft); }
 
+  /* Badge baca-saja, pengganti quick-status-select kalau yang login bukan
+     pembuat/penanggung jawab tugas ini -- sengaja bukan <select> supaya tidak
+     kelihatan bisa diklik/diubah. */
+  .quick-status-badge {
+    flex-shrink: 0;
+    max-width: 108px;
+    padding: 4px 6px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .task-card.status-belum .quick-status-badge { background: var(--belum-soft); }
+  .task-card.status-dikerjakan .quick-status-badge { background: var(--dikerjakan-soft); }
+  .task-card.status-selesai .quick-status-badge { background: var(--selesai-soft); }
+
   .task-card .nama {
     font-weight: 600;
     font-size: 0.95rem;
@@ -844,6 +864,7 @@
   .task-card.status-selesai .task-card-status-block { background: var(--selesai-soft); }
 
   .task-card-status-block select,
+  .task-card-status-block .status-readonly,
   .task-card-status-block .bukti-input {
     width: 100%;
     padding: 7px 10px;
@@ -853,6 +874,12 @@
     font-size: 0.85rem;
     background: var(--surface);
     color: var(--text);
+  }
+
+  /* Badge baca-saja, pengganti dropdown status detail kalau yang login bukan
+     pembuat/penanggung jawab tugas ini. */
+  .task-card-status-block .status-readonly {
+    color: var(--text-muted);
   }
 
   .task-card-footer {
@@ -2073,18 +2100,41 @@
           const summaryMeta = document.createElement('div');
           summaryMeta.className = 'task-card-summary-meta';
 
-          const quickStatusSelect = document.createElement('select');
-          quickStatusSelect.className = 'quick-status-select';
-          quickStatusSelect.title = 'Ubah status cepat';
-          STATUSES.forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s;
-            opt.textContent = s;
-            if (s === task.status) opt.selected = true;
-            quickStatusSelect.appendChild(opt);
-          });
-          quickStatusSelect.addEventListener('click', e => e.stopPropagation());
-          quickStatusSelect.addEventListener('mousedown', e => e.stopPropagation());
+          const pjList = task.tugas_pj || [];
+
+          // Wewenang ubah status: pembuat ATAU salah satu penanggung jawab --
+          // predikat SAMA PERSIS dengan RLS tugas_update di Supabase (lihat
+          // migrasi RLS), dihitung dari identitas login sungguhan
+          // (getLoggedInAnggota), bukan currentUserId (nilai filter "Lihat
+          // Sebagai" yang sekarang bisa diganti bebas ke siapa saja). Kalau
+          // tidak berwenang, dropdown status diganti badge baca-saja supaya
+          // UX-nya jujur -- bukan cuma ditolak diam-diam di server saat diklik.
+          const loggedInAnggota = getLoggedInAnggota();
+          const isCreator = loggedInAnggota && task.dibuat_oleh === loggedInAnggota.nama;
+          const isAssignee = loggedInAnggota && pjList.some(p => p.anggota_id === loggedInAnggota.id);
+          const canEditStatus = isCreator || isAssignee;
+
+          let quickStatusSelect = null;
+          let quickStatusBadge = null;
+          if (canEditStatus) {
+            quickStatusSelect = document.createElement('select');
+            quickStatusSelect.className = 'quick-status-select';
+            quickStatusSelect.title = 'Ubah status cepat';
+            STATUSES.forEach(s => {
+              const opt = document.createElement('option');
+              opt.value = s;
+              opt.textContent = s;
+              if (s === task.status) opt.selected = true;
+              quickStatusSelect.appendChild(opt);
+            });
+            quickStatusSelect.addEventListener('click', e => e.stopPropagation());
+            quickStatusSelect.addEventListener('mousedown', e => e.stopPropagation());
+          } else {
+            quickStatusBadge = document.createElement('span');
+            quickStatusBadge.className = 'quick-status-badge';
+            quickStatusBadge.title = 'Cuma pembuat atau penanggung jawab tugas ini yang boleh ubah status';
+            quickStatusBadge.textContent = task.status;
+          }
 
           const chevron = document.createElement('span');
           chevron.className = 'task-card-chevron';
@@ -2093,7 +2143,6 @@
           const details = document.createElement('div');
           details.className = 'task-card-details';
 
-          const pjList = task.tugas_pj || [];
           const pjChips = pjList.map(p => {
             const pj = document.createElement('div');
             pj.className = 'task-card-chip chip-pj';
@@ -2121,14 +2170,22 @@
           deskripsi.className = 'deskripsi';
           if (task.deskripsi) deskripsi.textContent = task.deskripsi;
 
-          const select = document.createElement('select');
-          STATUSES.forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s;
-            opt.textContent = s;
-            if (s === task.status) opt.selected = true;
-            select.appendChild(opt);
-          });
+          let select = null;
+          let statusReadonly = null;
+          if (canEditStatus) {
+            select = document.createElement('select');
+            STATUSES.forEach(s => {
+              const opt = document.createElement('option');
+              opt.value = s;
+              opt.textContent = s;
+              if (s === task.status) opt.selected = true;
+              select.appendChild(opt);
+            });
+          } else {
+            statusReadonly = document.createElement('div');
+            statusReadonly.className = 'status-readonly';
+            statusReadonly.textContent = task.status;
+          }
 
           const buktiInput = document.createElement('input');
           buktiInput.type = 'url';
@@ -2146,7 +2203,7 @@
             await fetchTasks();
           });
 
-          const statusSelects = [select, quickStatusSelect];
+          const statusSelects = [select, quickStatusSelect].filter(Boolean);
           async function commitStatusChange(newStatus) {
             if (newStatus === 'Selesai' && !buktiInput.value.trim()) {
               statusSelects.forEach(s => { s.value = task.status; });
@@ -2175,12 +2232,14 @@
             }
             await fetchTasks();
           }
-          select.addEventListener('change', () => commitStatusChange(select.value));
-          quickStatusSelect.addEventListener('change', () => commitStatusChange(quickStatusSelect.value));
+          if (canEditStatus) {
+            select.addEventListener('change', () => commitStatusChange(select.value));
+            quickStatusSelect.addEventListener('change', () => commitStatusChange(quickStatusSelect.value));
+          }
 
           head.appendChild(statusIcon);
           head.appendChild(nama);
-          summaryMeta.appendChild(quickStatusSelect);
+          summaryMeta.appendChild(quickStatusSelect || quickStatusBadge);
           summaryMeta.appendChild(chevron);
           summary.appendChild(head);
           summary.appendChild(summaryMeta);
@@ -2197,7 +2256,7 @@
 
           const statusBlock = document.createElement('div');
           statusBlock.className = 'task-card-status-block';
-          statusBlock.appendChild(select);
+          statusBlock.appendChild(select || statusReadonly);
           statusBlock.appendChild(buktiInput);
           details.appendChild(statusBlock);
 
@@ -2255,14 +2314,10 @@
             footer.appendChild(calBadge);
           }
 
-          // Tombol "Kirim Pengingat"/"Batalkan Tugas" HARUS dihitung dari identitas
-          // login sungguhan (getLoggedInAnggota), bukan currentUserId (nilai filter
-          // "Lihat Sebagai" yang sekarang bisa diganti bebas ke siapa saja) --
-          // kalau tidak, tombolnya bisa muncul untuk orang yang sebenarnya bukan
-          // pembuat tugas itu (walau aksinya sendiri tetap ditolak server/lib/auth.js,
-          // munculnya tombol yang ujung-ujungnya gagal itu membingungkan).
-          const loggedInAnggota = getLoggedInAnggota();
-          const isCreator = loggedInAnggota && task.dibuat_oleh === loggedInAnggota.nama;
+          // Tombol "Kirim Pengingat"/"Batalkan Tugas" pakai isCreator/loggedInAnggota
+          // yang sudah dihitung di atas (dari identitas login sungguhan, bukan
+          // currentUserId/filter "Lihat Sebagai") -- supaya tombolnya tidak muncul
+          // untuk orang yang sebenarnya bukan pembuat tugas itu.
           if (isCreator && task.status !== 'Selesai' && pjList.some(p => p.email)) {
             const reminderBtn = document.createElement('button');
             reminderBtn.type = 'button';
