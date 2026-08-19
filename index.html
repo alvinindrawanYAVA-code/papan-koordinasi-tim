@@ -2106,13 +2106,19 @@
           // predikat SAMA PERSIS dengan RLS tugas_update di Supabase (lihat
           // migrasi RLS), dihitung dari identitas login sungguhan
           // (getLoggedInAnggota), bukan currentUserId (nilai filter "Lihat
-          // Sebagai" yang sekarang bisa diganti bebas ke siapa saja). Kalau
-          // tidak berwenang, dropdown status diganti badge baca-saja supaya
-          // UX-nya jujur -- bukan cuma ditolak diam-diam di server saat diklik.
+          // Sebagai" yang sekarang bisa diganti bebas ke siapa saja).
+          //
+          // Ditambah satu syarat lagi: "Lihat Sebagai" harus sama dengan
+          // identitas login sendiri. Tanpa ini, tugas milik sendiri tetap
+          // kelihatan bisa diedit walau lagi "melihat sebagai" orang lain --
+          // padahal permintaannya dropdown status dikunci selama Lihat
+          // Sebagai != user login, apa pun statusnya (Belum Mulai/Dikerjakan/
+          // Selesai) dan siapa pun pembuat/PJ-nya.
           const loggedInAnggota = getLoggedInAnggota();
           const isCreator = loggedInAnggota && task.dibuat_oleh === loggedInAnggota.nama;
           const isAssignee = loggedInAnggota && pjList.some(p => p.anggota_id === loggedInAnggota.id);
-          const canEditStatus = isCreator || isAssignee;
+          const isViewingAsSelf = loggedInAnggota && currentUserId === loggedInAnggota.id;
+          const canEditStatus = (isCreator || isAssignee) && isViewingAsSelf;
 
           let quickStatusSelect = null;
           let quickStatusBadge = null;
