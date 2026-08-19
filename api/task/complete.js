@@ -1,6 +1,36 @@
 const { sbSelect } = require('../../lib/supabaseAdmin');
 const { sendEmail } = require('../../lib/emailjs');
-const { formatTanggal } = require('../../lib/time');
+const { formatTanggal, todayWita, diffDays } = require('../../lib/time');
+
+// Bangun blok "Selesai Pada (Aktual)" + badge "Ketepatan Waktu" (dibandingkan
+// terhadap tenggat asli/task.tanggal_selesai). Cuma dipakai di notifikasi
+// tugas Selesai -- 3 pemanggil template Task Reminder lainnya (reminder
+// manual, overdue otomatis, cancel) kirim string kosong untuk var ini.
+function buildCompletionInfoHtml(tanggalSelesai) {
+  const today = todayWita();
+  const tile = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f6f8; border-radius:16px; margin:0 0 12px;"><tr><td style="padding:14px 16px;"><p style="margin:0 0 4px; font-size:11px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; color:#9ca3af;">Selesai Pada (Aktual)</p><p style="margin:0; font-size:15px; font-weight:800; color:#1f2430;">${formatTanggal(today)}</p></td></tr></table>`;
+
+  if (!tanggalSelesai) return tile;
+
+  const diff = diffDays(today, tanggalSelesai);
+  let label, color, bg;
+  if (diff > 0) {
+    label = `⚠️ Terlambat ${diff} hari`;
+    color = '#dc2626';
+    bg = '#fee2e2';
+  } else if (diff < 0) {
+    label = `🚀 Lebih Cepat ${Math.abs(diff)} hari`;
+    color = '#16a34a';
+    bg = '#dcfce7';
+  } else {
+    label = '✅ Tepat Waktu';
+    color = '#4f46e5';
+    bg = '#eef2ff';
+  }
+  const badge = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${bg}; border-radius:16px; margin:0 0 12px;"><tr><td style="padding:16px 18px;"><p style="margin:0 0 4px; font-size:12px; font-weight:800; letter-spacing:0.04em; text-transform:uppercase; color:${color};">Ketepatan Waktu</p><p style="margin:0; font-size:18px; font-weight:800; color:${color};">${label}</p></td></tr></table>`;
+
+  return tile + badge;
+}
 
 // Dipicu (fire-and-forget) dari client tepat setelah penanggung jawab menandai
 // tugas "Selesai" (lihat commitStatusChange di index.html). Memberi tahu
@@ -42,13 +72,14 @@ module.exports = async (req, res) => {
     const pjRows = await sbSelect('tugas_pj', { tugas_id: `eq.${taskId}`, select: '*' });
     const pjNames = (pjRows || []).map(p => p.nama).join(', ') || 'Penanggung jawab';
 
-    // reminder_message dirender sebagai teks polos di template email (bukan lewat
-    // tag <a>), jadi URL bukti disertakan apa adanya di sini -- kebanyakan klien
-    // email (Gmail, Outlook, dll) otomatis mengubah URL polos jadi link yang bisa
-    // diklik, tanpa perlu ubah template EmailJS di dashboard.
-    const message = task.bukti
-      ? `${pjNames} menandai tugas "${task.nama}" sudah selesai. Link bukti kerja: ${task.bukti}`
-      : `${pjNames} menandai tugas "${task.nama}" sudah selesai.`;
+    // Link bukti sekarang tampil sebagai tombol tersendiri (bukti_button_html),
+    // bukan lagi URL polos di reminder_message -- URL polos di area hero
+    // banner berwarna gampang jadi biru mentah (auto-linkify klien email) dan
+    // susah dibaca.
+    const message = `${pjNames} menandai tugas "${task.nama}" sudah selesai.`;
+    const buktiButtonHtml = task.bukti
+      ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 12px;"><tr><td align="center" style="border-radius:999px; background-color:#16a34a;"><a href="${task.bukti}" target="_blank" style="display:block; padding:14px 22px; font-size:14px; font-weight:800; color:#ffffff; text-decoration:none;">🔗 Lihat Bukti Kerja &rarr;</a></td></tr></table>`
+      : '';
 
     await sendEmail({
       templateId: process.env.EMAILJS_REMINDER_TEMPLATE_ID,
@@ -64,6 +95,8 @@ module.exports = async (req, res) => {
         reminder_headline: 'Tugas Selesai',
         reminder_message: message,
         accent_color: '#16a34a',
+        completion_info_html: buildCompletionInfoHtml(task.tanggal_selesai),
+        bukti_button_html: buktiButtonHtml,
       },
     });
 

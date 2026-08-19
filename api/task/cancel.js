@@ -64,6 +64,8 @@ module.exports = async (req, res) => {
             reminder_headline: 'Tugas Dibatalkan',
             reminder_message: `${task.dibuat_oleh || 'Pembuat tugas'} membatalkan tugas "${task.nama}" ini, jadi tidak perlu dikerjakan lagi.`,
             accent_color: '#6b7280',
+            completion_info_html: '',
+            bukti_button_html: '',
           },
         });
         emailsSent++;

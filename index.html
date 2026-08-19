@@ -1353,6 +1353,10 @@
           <textarea id="deskripsi-tugas" rows="2" placeholder="Detail tambahan, instruksi khusus, dll (opsional)"></textarea>
         </div>
         <div class="field field-wide">
+          <label for="lampiran-tugas">Link Lampiran (opsional)</label>
+          <input type="url" id="lampiran-tugas" placeholder="Link file referensi, mis. Google Drive (opsional)">
+        </div>
+        <div class="field field-wide">
           <label>Penanggung Jawab (bisa pilih lebih dari 1)</label>
           <div class="pj-multiselect" id="penanggung-jawab-group"></div>
         </div>
@@ -1956,6 +1960,17 @@
             footer.appendChild(link);
           }
 
+          if (task.lampiran) {
+            const lampiranLink = document.createElement('a');
+            lampiranLink.href = task.lampiran;
+            lampiranLink.title = task.lampiran;
+            lampiranLink.target = '_blank';
+            lampiranLink.rel = 'noopener';
+            lampiranLink.className = 'bukti-link';
+            lampiranLink.textContent = '📎 Lihat Lampiran';
+            footer.appendChild(lampiranLink);
+          }
+
           if (pjList.some(p => p.notif_status === 'terkirim')) {
             const badge = document.createElement('span');
             badge.className = 'notif-status ok';
@@ -2363,6 +2378,9 @@
         return;
       }
       const pjList = task.tugas_pj || [];
+      const lampiranButtonHtml = task.lampiran
+        ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 12px;"><tr><td align="center" style="border-radius:999px; background-color:#4f46e5;"><a href="${task.lampiran}" target="_blank" style="display:block; padding:14px 22px; font-size:14px; font-weight:800; color:#ffffff; text-decoration:none;">📎 Lihat File Lampiran &rarr;</a></td></tr></table>`
+        : '';
       let anySent = false;
       let anyFailed = false;
       for (const pj of pjList) {
@@ -2378,7 +2396,8 @@
             task_status: task.status,
             task_start: formatTanggal(task.tanggal_mulai),
             task_end: formatTanggal(task.tanggal_selesai),
-            created_at: formatTanggal(task.dibuat_pada.slice(0, 10))
+            created_at: formatTanggal(task.dibuat_pada.slice(0, 10)),
+            lampiran_button_html: lampiranButtonHtml
           });
           notifStatus = 'terkirim';
           anySent = true;
@@ -2405,6 +2424,7 @@
       e.preventDefault();
       const namaInput = document.getElementById('nama-tugas');
       const deskripsiInput = document.getElementById('deskripsi-tugas');
+      const lampiranInput = document.getElementById('lampiran-tugas');
       const dibuatOlehSelect = document.getElementById('dibuat-oleh');
       const mulaiInput = document.getElementById('tanggal-mulai');
       const selesaiInput = document.getElementById('tanggal-selesai');
@@ -2428,6 +2448,7 @@
       const { data: newTask, error } = await db.from('tugas').insert({
         nama: namaInput.value.trim(),
         deskripsi: deskripsiInput.value.trim() || null,
+        lampiran: lampiranInput.value.trim() || null,
         dibuat_oleh: creator.nama,
         status: statusInput.value,
         bukti: null,
@@ -2455,6 +2476,7 @@
 
       namaInput.value = '';
       deskripsiInput.value = '';
+      lampiranInput.value = '';
       selectedPjIds = new Set();
       populatePjMultiselect();
       dibuatOlehSelect.value = '';

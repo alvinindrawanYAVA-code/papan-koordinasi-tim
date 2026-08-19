@@ -18,6 +18,8 @@ function buildReminderParams(task, pj, { headline, message, accentColor }) {
     reminder_headline: headline,
     reminder_message: message,
     accent_color: accentColor,
+    completion_info_html: '',
+    bukti_button_html: '',
   };
 }
 

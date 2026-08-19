@@ -59,6 +59,8 @@ module.exports = async (req, res) => {
           reminder_headline: headline,
           reminder_message: message,
           accent_color: accentColor,
+          completion_info_html: '',
+          bukti_button_html: '',
         },
       });
       if (i < recipients.length - 1) await sleep(EMAILJS_RATE_LIMIT_MS);
