@@ -1441,7 +1441,7 @@
 
       <div class="panduan-step">
         <h3>2. Buat Tugas</h3>
-        <p>Isi nama &amp; deskripsi tugas, lalu pilih <strong>Penanggung Jawab</strong> — bisa klik beberapa nama sekaligus (bukan cuma 1), atau klik chip <strong>🌐 Semua Tim</strong> untuk assign ke seluruh anggota langsung. Isi juga siapa <strong>Dibuat Oleh</strong>, periode pengerjaan, dan status awal.</p>
+        <p>Isi nama &amp; deskripsi tugas, lalu pilih <strong>Penanggung Jawab</strong> — bisa klik beberapa nama sekaligus (bukan cuma 1), atau klik chip <strong>🌐 Semua Tim</strong> untuk assign ke seluruh anggota langsung. <strong>Dibuat Oleh</strong> otomatis diisi nama akun yang login, tinggal isi periode pengerjaan dan status awal.</p>
       </div>
 
       <div class="panduan-step">
@@ -1527,12 +1527,6 @@
         <div class="field field-wide">
           <label>Penanggung Jawab (bisa pilih lebih dari 1)</label>
           <div class="pj-multiselect" id="penanggung-jawab-group"></div>
-        </div>
-        <div class="field">
-          <label for="dibuat-oleh">Dibuat Oleh</label>
-          <select id="dibuat-oleh" required>
-            <option value="" disabled selected>Pilih pembuat</option>
-          </select>
         </div>
         <div class="field">
           <label for="tanggal-mulai">Tanggal Mulai</label>
@@ -1918,20 +1912,6 @@
       renderMemberSelects();
     }
 
-    function populateMemberSelect(select, placeholder) {
-      const currentValue = select.value;
-      select.innerHTML = `<option value="" disabled selected>${placeholder}</option>`;
-      anggotaList.forEach(a => {
-        const opt = document.createElement('option');
-        opt.value = a.id;
-        opt.textContent = `${a.nama} (${a.email})`;
-        select.appendChild(opt);
-      });
-      if (anggotaList.some(a => a.id === currentValue)) {
-        select.value = currentValue;
-      }
-    }
-
     let selectedPjIds = new Set();
     function populatePjMultiselect() {
       // Buang id anggota yang sudah dihapus dari tim supaya tidak nyangkut di seleksi.
@@ -1979,7 +1959,6 @@
 
     function renderMemberSelects() {
       populatePjMultiselect();
-      populateMemberSelect(document.getElementById('dibuat-oleh'), 'Pilih pembuat');
       document.getElementById('pj-hint').hidden = anggotaList.length > 0;
       populateCurrentUserSelect();
     }
@@ -2764,7 +2743,6 @@
       const namaInput = document.getElementById('nama-tugas');
       const deskripsiInput = document.getElementById('deskripsi-tugas');
       const lampiranInput = document.getElementById('lampiran-tugas');
-      const dibuatOlehSelect = document.getElementById('dibuat-oleh');
       const mulaiInput = document.getElementById('tanggal-mulai');
       const selesaiInput = document.getElementById('tanggal-selesai');
       const statusInput = document.getElementById('status-awal');
@@ -2777,12 +2755,17 @@
       selesaiInput.setCustomValidity('');
 
       const selectedMembers = anggotaList.filter(a => selectedPjIds.has(a.id));
-      const creator = anggotaList.find(a => a.id === dibuatOlehSelect.value);
+      // "Dibuat Oleh" tidak lagi dropdown manual -- otomatis diambil dari identitas
+      // login sungguhan (getLoggedInAnggota), bukan pilihan bebas.
+      const creator = getLoggedInAnggota();
       if (selectedMembers.length === 0) {
         showToast('Pilih minimal 1 penanggung jawab.');
         return;
       }
-      if (!creator) return;
+      if (!creator) {
+        showToast('Akun Anda belum terhubung ke data Anggota Tim. Hubungi admin.');
+        return;
+      }
 
       const { data: newTask, error } = await db.from('tugas').insert({
         nama: namaInput.value.trim(),
@@ -2818,7 +2801,6 @@
       lampiranInput.value = '';
       selectedPjIds = new Set();
       populatePjMultiselect();
-      dibuatOlehSelect.value = '';
       mulaiInput.value = '';
       selesaiInput.value = '';
       statusInput.value = 'Belum Mulai';
@@ -2835,26 +2817,25 @@
         .catch(err => console.error('Gagal buat event Google Calendar:', err));
     });
 
-    // Default-select "Lihat Sebagai" & "Dibuat Oleh" ke anggota yang emailnya cocok
-    // dengan akun yang login -- cuma kalau belum ada pilihan tersimpan (localStorage
-    // kosong / dropdown belum diisi), supaya tidak menimpa pilihan eksplisit user.
-    // Ini murni kenyamanan UI, bukan batas keamanan -- penegakan sungguhan ada di
-    // server (RLS + lib/auth.js), jadi dropdownnya tetap boleh diganti manual.
+    // Setiap kali app dibuka (dipanggil sekali per boot(), lihat di bawah), filter
+    // "Lihat Sebagai" dipaksa balik ke anggota yang emailnya cocok dengan akun yang
+    // login, dan "Tampilkan" dipaksa ke "both" -- menimpa pilihan tersimpan
+    // sebelumnya (localStorage), supaya user selalu mulai dari sudut pandang
+    // dirinya sendiri tiap buka app, bukan sisa pilihan sesi lama. Selama sesi
+    // masih berjalan, dropdownnya tetap boleh diganti manual seperti biasa --
+    // ini murni default awal, bukan batas keamanan (penegakan sungguhan tetap di
+    // server lewat RLS/lib/auth.js).
     function applyDefaultCurrentUser(email) {
       if (!email) return;
       const match = anggotaList.find(a => a.email === email);
       if (!match) return;
-      if (!currentUserId) {
-        currentUserId = match.id;
-        localStorage.setItem('currentUserId', currentUserId);
-        populateCurrentUserSelect();
-        updateRoleSelectVisibility();
-        render();
-      }
-      const dibuatOlehSelect = document.getElementById('dibuat-oleh');
-      if (dibuatOlehSelect && !dibuatOlehSelect.value) {
-        dibuatOlehSelect.value = match.id;
-      }
+      currentUserId = match.id;
+      currentUserRole = 'both';
+      localStorage.setItem('currentUserId', currentUserId);
+      localStorage.setItem('currentUserRole', currentUserRole);
+      populateCurrentUserSelect();
+      updateRoleSelectVisibility();
+      render();
     }
 
     // Dipanggil sekali begitu sesi login terkonfirmasi (lihat applyAuthState di
