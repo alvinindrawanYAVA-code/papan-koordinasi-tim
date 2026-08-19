@@ -783,7 +783,14 @@
   .gantt-header-scroll {
     flex: 1;
     min-width: 0;
-    overflow: hidden;
+    /* overflow-x:auto (bukan hidden) sengaja -- ini bikin scrollbar horizontal
+       langsung kelihatan & bisa digeser dari sini, karena header-row ini ada DI
+       LUAR .gantt-scroll-outer (yang scroll vertikal), jadi tidak ikut terpotong
+       dan tidak butuh scroll ke bawah dulu buat baru muncul (beda dgn scrollbar
+       bawaan .gantt-timeline-scroll yang nempel di ujung bawah SEMUA baris tugas,
+       jauh di luar area 480px yang kelihatan). Disinkron 2 arah lewat JS. */
+    overflow-x: auto;
+    overflow-y: hidden;
   }
 
   /* Cuma bagian ini yang scroll vertikal -- header tanggal di atas (.gantt-header-row)
@@ -2401,11 +2408,15 @@
       container.appendChild(headerRow);
       container.appendChild(scrollOuter);
 
-      // Header (tanggal) ikut geser horizontal mengikuti body, tapi cuma lewat JS --
-      // scrollbar-nya sendiri disembunyikan (overflow:hidden) supaya user cuma
-      // menggeser dari body, header ikut otomatis.
+      // Disinkron 2 arah: geser dari scrollbar header (yang sengaja dibuat kelihatan
+      // dari awal) ikut menggeser body, dan sebaliknya geser/swipe di body (baris
+      // tugas) ikut menggeser header. Aman dari loop tak berhenti -- set scrollLeft
+      // ke nilai yang sudah sama persis tidak memicu event 'scroll' lagi di browser.
       scrollWrap.addEventListener('scroll', () => {
         headerScroll.scrollLeft = scrollWrap.scrollLeft;
+      });
+      headerScroll.addEventListener('scroll', () => {
+        scrollWrap.scrollLeft = headerScroll.scrollLeft;
       });
 
       if (savedScrollLeft !== null) {
