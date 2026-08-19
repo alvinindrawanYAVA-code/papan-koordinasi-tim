@@ -63,6 +63,14 @@
     padding: 24px;
   }
 
+  /* Sama seperti .app-shell[hidden] di atas -- tanpa ini, login-gate TIDAK PERNAH
+     benar-benar hilang walau atribut hidden sudah true (display:flex di atas
+     mengalahkan default UA [hidden]), jadi kartu login tetap menutupi seluruh
+     viewport di atas app yang sebenarnya sudah ter-render di baliknya. */
+  .login-gate[hidden] {
+    display: none;
+  }
+
   .login-card {
     background: var(--surface);
     border-radius: 20px;
