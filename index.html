@@ -1686,13 +1686,22 @@
     function updateRoleSelectVisibility() {
       document.getElementById('tugas-role-filter').hidden = !currentUserId;
     }
+    // Baris anggota yang SUNGGUH login sekarang (dicocokkan dari email sesi Supabase
+    // Auth) -- ini identitas asli, beda dari currentUserId yang cuma nilai filter
+    // "Lihat Sebagai" dan bisa diganti bebas ke siapa saja buat menyaring tampilan.
+    // Dipakai buat apa pun yang butuh tahu "siapa yang benar-benar sedang login"
+    // (sapaan sidebar, tombol aksi creator-only) -- BUKAN buat otorisasi sungguhan,
+    // itu tetap ditegakkan server-side/RLS terlepas dari nilai ini.
+    function getLoggedInAnggota() {
+      return currentSessionEmail ? anggotaList.find(a => a.email === currentSessionEmail) : null;
+    }
     // Sapaan sidebar pakai nama dari anggotaList (match by email login), bukan
     // session.user.user_metadata -- supaya konsisten dengan nama yang tampil di
     // kartu tugas/dropdown "Dibuat Oleh" lainnya di app ini.
     function renderSidebarGreeting() {
       const el = document.getElementById('sidebar-greeting');
       if (!el) return;
-      const match = currentSessionEmail ? anggotaList.find(a => a.email === currentSessionEmail) : null;
+      const match = getLoggedInAnggota();
       el.textContent = 'Halo, ' + (match ? match.nama : (currentSessionEmail || '...')) + '!';
     }
     function populateCurrentUserSelect() {
@@ -2246,8 +2255,14 @@
             footer.appendChild(calBadge);
           }
 
-          const currentUser = anggotaList.find(a => a.id === currentUserId);
-          const isCreator = currentUser && task.dibuat_oleh === currentUser.nama;
+          // Tombol "Kirim Pengingat"/"Batalkan Tugas" HARUS dihitung dari identitas
+          // login sungguhan (getLoggedInAnggota), bukan currentUserId (nilai filter
+          // "Lihat Sebagai" yang sekarang bisa diganti bebas ke siapa saja) --
+          // kalau tidak, tombolnya bisa muncul untuk orang yang sebenarnya bukan
+          // pembuat tugas itu (walau aksinya sendiri tetap ditolak server/lib/auth.js,
+          // munculnya tombol yang ujung-ujungnya gagal itu membingungkan).
+          const loggedInAnggota = getLoggedInAnggota();
+          const isCreator = loggedInAnggota && task.dibuat_oleh === loggedInAnggota.nama;
           if (isCreator && task.status !== 'Selesai' && pjList.some(p => p.email)) {
             const reminderBtn = document.createElement('button');
             reminderBtn.type = 'button';
