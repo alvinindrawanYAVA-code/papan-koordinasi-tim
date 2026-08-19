@@ -222,6 +222,29 @@
     font-size: 0.85rem;
   }
 
+  .panduan-step {
+    padding: 14px 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .panduan-step:first-of-type {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  .panduan-step h3 {
+    margin: 0 0 6px;
+    font-size: 0.92rem;
+    color: var(--text);
+  }
+
+  .panduan-step p {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+  }
+
   form#task-form,
   form#anggota-form {
     display: flex;
@@ -1222,6 +1245,7 @@
         <a href="#section-tambah" data-nav="tambah">➕ Tambah Tugas</a>
         <a href="#section-tugas" data-nav="tugas">📋 Tugas</a>
         <a href="#section-gantt-tab" data-nav="gantt">📊 Gantt Chart</a>
+        <a href="#section-panduan" data-nav="panduan">📖 Panduan</a>
       </nav>
     </aside>
 
@@ -1234,6 +1258,46 @@
         <span><span class="dot selesai"></span>Selesai</span>
       </div>
       <div id="gantt-chart"></div>
+    </div>
+
+    <div class="card-panel" id="section-panduan" hidden>
+      <h2 class="panel-title">📖 Panduan Penggunaan</h2>
+      <p class="panel-desc">Alur kerja singkat memakai Papan Koordinasi Tim, dari setup awal sampai tugas selesai.</p>
+
+      <div class="panduan-step">
+        <h3>1. Tambahkan Anggota Tim</h3>
+        <p>Buka <strong>Anggota Tim</strong>, isi nama &amp; email tiap orang. Daftar ini yang nanti dipakai buat pilihan penanggung jawab tugas, pembuat tugas, dan filter "Lihat Sebagai" di sidebar.</p>
+      </div>
+
+      <div class="panduan-step">
+        <h3>2. Buat Tugas</h3>
+        <p>Isi nama &amp; deskripsi tugas, lalu pilih <strong>Penanggung Jawab</strong> — bisa klik beberapa nama sekaligus (bukan cuma 1), atau klik chip <strong>🌐 Semua Tim</strong> untuk assign ke seluruh anggota langsung. Isi juga siapa <strong>Dibuat Oleh</strong>, periode pengerjaan, dan status awal.</p>
+      </div>
+
+      <div class="panduan-step">
+        <h3>3. Pantau &amp; Update Status</h3>
+        <p>Lihat semua tugas lewat tampilan <strong>Papan</strong> (kolom per status) atau <strong>Gantt Chart</strong> (garis waktu). Ubah status lewat dropdown cepat di kartu tugas — status <strong>Selesai</strong> wajib diisi link bukti kerja dulu.</p>
+      </div>
+
+      <div class="panduan-step">
+        <h3>4. Notifikasi Email Otomatis</h3>
+        <p>Setiap penanggung jawab dapat email sendiri-sendiri, hanya di 4 momen: tugas baru dibuat, klik "🔔 Kirim Pengingat" manual, tugas ditandai Selesai (email ke pembuat), dan reminder overdue otomatis tiap 3 hari sekali kalau lewat tenggat.</p>
+      </div>
+
+      <div class="panduan-step">
+        <h3>5. Google Calendar (opsional)</h3>
+        <p>Tiap anggota bisa hubungkan akun Google-nya sendiri lewat panel Anggota Tim — begitu connect, tugas yang di-assign ke dia otomatis muncul sebagai event di kalendernya, per orang, tidak saling tercampur.</p>
+      </div>
+
+      <div class="panduan-step">
+        <h3>6. Filter "Lihat Sebagai"</h3>
+        <p>Pilih nama Anda di sidebar untuk menyaring papan &amp; ringkasan supaya cuma menampilkan tugas yang terkait — bisa pilih ditugaskan ke saya, dibuat oleh saya, atau keduanya. Pilih "🔍 Semua Tugas" untuk lihat semuanya lagi.</p>
+      </div>
+
+      <div class="panduan-step">
+        <h3>7. Batalkan Tugas</h3>
+        <p>Pembuat tugas bisa klik "🗙 Batalkan Tugas" kalau ternyata tidak jadi dikerjakan — tugas pindah ke daftar "Tugas Dibatalkan" (bukan dihapus) dan bisa dipulihkan kapan saja lewat tombol "↩️ Pulihkan".</p>
+      </div>
     </div>
 
     <div class="card-panel" id="section-anggota" hidden>
@@ -1440,8 +1504,9 @@
       document.getElementById('dashboard-view').hidden = view !== 'dashboard';
       document.getElementById('section-anggota').hidden = view !== 'anggota';
       document.getElementById('section-gantt-tab').hidden = view !== 'gantt';
+      document.getElementById('section-panduan').hidden = view !== 'panduan';
       document.querySelectorAll('.sidebar-nav a').forEach(a => {
-        a.classList.toggle('active', a.dataset.nav === view && (view === 'anggota' || view === 'gantt'));
+        a.classList.toggle('active', a.dataset.nav === view && (view === 'anggota' || view === 'gantt' || view === 'panduan'));
       });
       if (view === 'gantt') renderGantt();
       if (view === 'dashboard') equalizeColumnHeights();
@@ -1449,7 +1514,7 @@
     document.querySelectorAll('.sidebar-nav a').forEach(a => {
       a.addEventListener('click', (e) => {
         e.preventDefault();
-        if (a.dataset.nav === 'anggota' || a.dataset.nav === 'gantt') {
+        if (a.dataset.nav === 'anggota' || a.dataset.nav === 'gantt' || a.dataset.nav === 'panduan') {
           setMainView(a.dataset.nav);
         } else {
           setMainView('dashboard');
