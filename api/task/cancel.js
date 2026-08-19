@@ -1,6 +1,6 @@
 const { sbSelect, sbUpdate } = require('../../lib/supabaseAdmin');
 const { sendEmail } = require('../../lib/emailjs');
-const { cancelTaskCalendarEvent } = require('../../lib/google');
+const { cancelTaskCalendarEvent, cancelCreatorCalendarEvent } = require('../../lib/google');
 const { formatTanggal } = require('../../lib/time');
 
 // Dipicu dari tombol "Batalkan Tugas" di kartu tugas (hanya pembuat tugas
@@ -43,6 +43,17 @@ module.exports = async (req, res) => {
         calendarCleanup.push(await cancelTaskCalendarEvent(pj));
       } catch (err) {
         console.error(`task/cancel: gagal hapus event kalender utk pj ${pj.id}:`, err);
+        calendarCleanup.push('failed');
+      }
+    }
+
+    if (task.creator_calendar_event_id && task.dibuat_oleh) {
+      try {
+        const creatorRows = await sbSelect('anggota', { nama: `eq.${task.dibuat_oleh}`, select: 'id' });
+        const creator = creatorRows && creatorRows[0];
+        if (creator) calendarCleanup.push(await cancelCreatorCalendarEvent(task, creator.id));
+      } catch (err) {
+        console.error(`task/cancel: gagal hapus event kalender pembuat utk tugas ${task.id}:`, err);
         calendarCleanup.push('failed');
       }
     }

@@ -1,5 +1,5 @@
 const { sbSelect, sbUpsert, sbUpdate } = require('../../lib/supabaseAdmin');
-const { verifyState, exchangeCodeForTokens, syncTaskCalendarEvent } = require('../../lib/google');
+const { verifyState, exchangeCodeForTokens, syncTaskCalendarEvent, syncCreatorCalendarEvent } = require('../../lib/google');
 
 module.exports = async (req, res) => {
   const { code, state, error: googleError } = req.query;
@@ -71,6 +71,30 @@ module.exports = async (req, res) => {
       }
     } catch (err) {
       console.error('google/callback: gagal backfill event kalender tugas lama:', err);
+    }
+
+    // Backfill juga buat tugas-tugas LAMA yang dia BUAT (bukan cuma yang di-assign
+    // ke dia) -- nama dulu, karena dibuat_oleh nyimpan nama teks, bukan anggota_id.
+    try {
+      const anggotaRows = await sbSelect('anggota', { id: `eq.${anggotaId}`, select: 'nama' });
+      const anggotaNama = anggotaRows && anggotaRows[0] && anggotaRows[0].nama;
+      if (anggotaNama) {
+        const createdTasks = await sbSelect('tugas', {
+          dibuat_oleh: `eq.${anggotaNama}`,
+          status: 'neq.Selesai',
+          creator_calendar_event_id: 'is.null',
+          tanggal_mulai: 'not.is.null',
+          tanggal_selesai: 'not.is.null',
+          select: '*, tugas_pj(*)',
+        });
+        for (const task of createdTasks || []) {
+          const isAlsoPj = (task.tugas_pj || []).some(pj => pj.anggota_id === anggotaId);
+          if (isAlsoPj) continue; // sudah/akan dapat event lewat backfill PJ di atas
+          await syncCreatorCalendarEvent(task, anggotaId);
+        }
+      }
+    } catch (err) {
+      console.error('google/callback: gagal backfill event kalender tugas yang dia buat:', err);
     }
 
     res.redirect('/?google=connected');

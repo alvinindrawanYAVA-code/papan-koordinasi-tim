@@ -1,5 +1,5 @@
 const { sbSelect } = require('../../lib/supabaseAdmin');
-const { syncTaskCalendarEvent } = require('../../lib/google');
+const { syncTaskCalendarEvent, syncCreatorCalendarEvent } = require('../../lib/google');
 
 // Dipanggil (fire-and-forget) dari index.html tepat setelah 1 tugas berhasil
 // dibuat. Selalu ambil ulang data tugas dari Supabase pakai taskId (tidak
@@ -28,7 +28,23 @@ module.exports = async (req, res) => {
       }
       statuses.push(await syncTaskCalendarEvent(task, pj));
     }
-    res.status(200).json({ statuses });
+
+    // Pembuat tugas ikut dapat event kalender sendiri (selain penanggung jawab),
+    // kecuali dia juga salah satu penanggung jawab (sudah dapat event lewat loop
+    // di atas -- jangan dobel).
+    let creatorStatus = null;
+    if (task.dibuat_oleh) {
+      const creatorRows = await sbSelect('anggota', { nama: `eq.${task.dibuat_oleh}`, select: 'id' });
+      const creator = creatorRows && creatorRows[0];
+      const isAlsoPj = creator && (pjRows || []).some(pj => pj.anggota_id === creator.id);
+      if (creator && !isAlsoPj) {
+        creatorStatus = task.creator_calendar_event_id
+          ? task.creator_calendar_status
+          : await syncCreatorCalendarEvent(task, creator.id);
+      }
+    }
+
+    res.status(200).json({ statuses, creatorStatus });
   } catch (err) {
     console.error('google/create-event error:', err);
     res.status(500).json({ error: 'Terjadi kesalahan server' });
