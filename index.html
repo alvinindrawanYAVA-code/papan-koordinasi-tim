@@ -162,29 +162,10 @@
     border-bottom: 1px solid var(--border);
   }
 
-  .sidebar-user label {
-    display: block;
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--text-muted);
-    margin-bottom: 6px;
-  }
-
-  .sidebar-user select {
-    width: 100%;
-    padding: 8px 10px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
+  .sidebar-greeting {
+    margin: 0 0 12px;
     font-size: 0.85rem;
-    font-family: inherit;
-    background: var(--bg);
-    color: var(--text);
-  }
-
-  .sidebar-user-role {
-    margin-top: 12px;
+    color: var(--text-muted);
   }
 
   .sidebar-nav {
@@ -579,6 +560,48 @@
   .section-title {
     margin: 0 0 16px;
     font-size: 1.1rem;
+  }
+
+  .tugas-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-end;
+    margin-bottom: 16px;
+  }
+
+  .tugas-filter-bar .filter-field {
+    flex: 0 1 220px;
+  }
+
+  .tugas-filter-bar label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  .tugas-filter-bar select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  /* Jaga-jaga: #tugas-role-filter sendiri tidak punya display eksplisit (cuma
+     properti flex-item lewat .filter-field), jadi default UA [hidden] harusnya
+     tetap berlaku -- tapi baris ini dipertahankan sebagai insurance murah,
+     konsisten dengan pola .app-shell[hidden]/.login-gate[hidden] yang sudah
+     kejadian 2x sesi ini kalau elemen ber-display eksplisit lupa di-override. */
+  #tugas-role-filter[hidden] {
+    display: none;
   }
 
   .board {
@@ -1341,7 +1364,8 @@
 
   @media (max-width: 720px) {
     form#task-form .field,
-    form#anggota-form .field {
+    form#anggota-form .field,
+    .tugas-filter-bar .filter-field {
       flex: 1 1 100%;
     }
     form#task-form button,
@@ -1374,18 +1398,7 @@
     <aside class="sidebar">
       <div class="brand">Papan Koordinasi Tim</div>
       <div class="sidebar-user">
-        <label for="current-user-select">Lihat Sebagai</label>
-        <select id="current-user-select">
-          <option value="">Pilih nama Anda</option>
-        </select>
-        <div class="sidebar-user-role" id="sidebar-user-role" hidden>
-          <label for="current-user-role-select">Tampilkan</label>
-          <select id="current-user-role-select">
-            <option value="assigned">🎯 Ditugaskan ke saya</option>
-            <option value="created">📝 Dibuat oleh saya</option>
-            <option value="both">🔀 Keduanya</option>
-          </select>
-        </div>
+        <p class="sidebar-greeting" id="sidebar-greeting">Halo!</p>
         <button id="signout-btn" type="button" class="signout-btn">🚪 Keluar</button>
       </div>
       <nav class="sidebar-nav">
@@ -1538,6 +1551,23 @@
     <div id="section-tugas">
       <h2 class="section-title">Tugas</h2>
 
+      <div class="tugas-filter-bar">
+        <div class="filter-field">
+          <label for="current-user-select">Lihat Sebagai</label>
+          <select id="current-user-select">
+            <option value="">Pilih nama Anda</option>
+          </select>
+        </div>
+        <div class="filter-field" id="tugas-role-filter" hidden>
+          <label for="current-user-role-select">Tampilkan</label>
+          <select id="current-user-role-select">
+            <option value="assigned">🎯 Ditugaskan ke saya</option>
+            <option value="created">📝 Dibuat oleh saya</option>
+            <option value="both">🔀 Keduanya</option>
+          </select>
+        </div>
+      </div>
+
       <div class="board" id="board-view">
         <section class="column" data-status="Belum Mulai">
           <h2><span class="dot belum"></span>Belum Mulai <span class="count" data-count="Belum Mulai"></span></h2>
@@ -1654,7 +1684,16 @@
     let currentUserId = localStorage.getItem('currentUserId') || '';
     let currentUserRole = localStorage.getItem('currentUserRole') || 'assigned';
     function updateRoleSelectVisibility() {
-      document.getElementById('sidebar-user-role').hidden = !currentUserId;
+      document.getElementById('tugas-role-filter').hidden = !currentUserId;
+    }
+    // Sapaan sidebar pakai nama dari anggotaList (match by email login), bukan
+    // session.user.user_metadata -- supaya konsisten dengan nama yang tampil di
+    // kartu tugas/dropdown "Dibuat Oleh" lainnya di app ini.
+    function renderSidebarGreeting() {
+      const el = document.getElementById('sidebar-greeting');
+      if (!el) return;
+      const match = currentSessionEmail ? anggotaList.find(a => a.email === currentSessionEmail) : null;
+      el.textContent = 'Halo, ' + (match ? match.nama : (currentSessionEmail || '...')) + '!';
     }
     function populateCurrentUserSelect() {
       const select = document.getElementById('current-user-select');
@@ -1668,6 +1707,7 @@
       select.value = anggotaList.some(a => a.id === currentUserId) ? currentUserId : '';
       document.getElementById('current-user-role-select').value = currentUserRole;
       updateRoleSelectVisibility();
+      renderSidebarGreeting();
     }
     function getVisibleTasks() {
       if (!currentUserId) return tasks;
