@@ -769,6 +769,31 @@
     gap: 6px;
   }
 
+  .gantt-header-row {
+    display: flex;
+    align-items: flex-start;
+  }
+
+  .gantt-corner {
+    flex: 0 0 200px;
+    height: 44px;
+    box-sizing: border-box;
+  }
+
+  .gantt-header-scroll {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  /* Cuma bagian ini yang scroll vertikal -- header tanggal di atas (.gantt-header-row)
+     sengaja di luar container ini supaya tetap kelihatan saat daftar tugas panjang.
+     480px ≈ 8 baris tugas (60px/baris) sebelum scrollbar vertikal muncul. */
+  .gantt-scroll-outer {
+    max-height: 480px;
+    overflow-y: auto;
+  }
+
   .gantt-body {
     display: flex;
     align-items: flex-start;
@@ -793,11 +818,6 @@
     gap: 10px;
     padding: 4px 12px 4px 0;
     min-width: 0;
-  }
-
-  .gantt-corner {
-    height: 44px;
-    border-top: none;
   }
 
   .gantt-label-avatar {
@@ -866,10 +886,14 @@
     overflow-x: auto;
   }
 
+  .gantt-timeline-header-inner {
+    position: relative;
+  }
+
   .gantt-timeline-inner {
     position: relative;
     background-image: repeating-linear-gradient(to right, var(--border) 0, var(--border) 1px, transparent 1px, transparent calc(var(--gantt-day-w, 22px) * 7));
-    background-position: 0 44px;
+    background-position: 0 0;
   }
 
   .gantt-ticks-month-row {
@@ -991,7 +1015,7 @@
 
   .gantt-today-line {
     position: absolute;
-    top: 44px;
+    top: 0;
     width: 2px;
     background: var(--danger);
     z-index: 2;
@@ -1212,7 +1236,8 @@
     .board {
       grid-template-columns: 1fr;
     }
-    .gantt-labels {
+    .gantt-labels,
+    .gantt-corner {
       flex-basis: 120px;
     }
     .stats-row {
@@ -2194,14 +2219,35 @@
 
       const sorted = [...withDates].sort((a, b) => parseDate(a.tanggal_mulai) - parseDate(b.tanggal_mulai));
 
+      // Header (bulan+tanggal) sengaja dipisah dari body (label+bar) jadi 2 elemen
+      // berbeda -- .gantt-scroll-outer (vertikal) membungkus body saja, sementara
+      // header tetap di luar supaya tidak ikut ke-scroll saat daftar tugas panjang.
+      // Scroll horizontal keduanya disinkronkan lewat JS (lihat listener di bawah),
+      // bukan lewat CSS overflow bersama, karena overflow-x:auto pada satu elemen
+      // otomatis memaksa overflow-y ikut jadi non-visible juga (aturan spec CSS) --
+      // itu bikin position:sticky di dalamnya tidak bisa nempel ke scroll container
+      // luar yang sebenarnya.
+      const headerRow = document.createElement('div');
+      headerRow.className = 'gantt-header-row';
+
+      const corner = document.createElement('div');
+      corner.className = 'gantt-corner';
+      headerRow.appendChild(corner);
+
+      const headerScroll = document.createElement('div');
+      headerScroll.className = 'gantt-header-scroll';
+      const headerInner = document.createElement('div');
+      headerInner.className = 'gantt-timeline-header-inner';
+      headerInner.style.width = totalWidth + 'px';
+
+      const scrollOuter = document.createElement('div');
+      scrollOuter.className = 'gantt-scroll-outer';
+
       const body = document.createElement('div');
       body.className = 'gantt-body';
 
       const labelsCol = document.createElement('div');
       labelsCol.className = 'gantt-labels';
-      const corner = document.createElement('div');
-      corner.className = 'gantt-label-cell gantt-corner';
-      labelsCol.appendChild(corner);
 
       const scrollWrap = document.createElement('div');
       scrollWrap.className = 'gantt-timeline-scroll';
@@ -2226,7 +2272,7 @@
         monthRow.appendChild(tick);
         monthCursor = monthEndEx;
       }
-      inner.appendChild(monthRow);
+      headerInner.appendChild(monthRow);
 
       const todayForHeader = new Date();
       todayForHeader.setHours(0, 0, 0, 0);
@@ -2243,7 +2289,9 @@
         dayRow.appendChild(tick);
         dayCursor = new Date(dayCursor.getTime() + DAY_MS);
       }
-      inner.appendChild(dayRow);
+      headerInner.appendChild(dayRow);
+      headerScroll.appendChild(headerInner);
+      headerRow.appendChild(headerScroll);
 
       sorted.forEach(task => {
         const statusClass = STATUS_CLASS[task.status] || '';
@@ -2342,11 +2390,21 @@
       scrollWrap.appendChild(inner);
       body.appendChild(labelsCol);
       body.appendChild(scrollWrap);
-      container.appendChild(body);
+      scrollOuter.appendChild(body);
+      container.appendChild(headerRow);
+      container.appendChild(scrollOuter);
+
+      // Header (tanggal) ikut geser horizontal mengikuti body, tapi cuma lewat JS --
+      // scrollbar-nya sendiri disembunyikan (overflow:hidden) supaya user cuma
+      // menggeser dari body, header ikut otomatis.
+      scrollWrap.addEventListener('scroll', () => {
+        headerScroll.scrollLeft = scrollWrap.scrollLeft;
+      });
 
       if (savedScrollLeft !== null) {
         // Re-render (mis. update realtime) — pertahankan posisi scroll user, jangan direset.
         scrollWrap.scrollLeft = savedScrollLeft;
+        headerScroll.scrollLeft = savedScrollLeft;
       } else {
         // Render pertama kali Gantt dibuka — scroll ke minggu berjalan supaya tidak
         // mulai dari area kosong kalau ada tugas lama yang menarik rangeStart mundur.
@@ -2362,6 +2420,7 @@
           targetScroll = Math.min(maxScroll, Math.max(0, todayOffsetPx - viewportWidth / 2));
         }
         scrollWrap.scrollLeft = targetScroll;
+        headerScroll.scrollLeft = targetScroll;
       }
 
       if (withoutDates.length > 0) {
