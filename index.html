@@ -803,6 +803,13 @@
     flex: 0 0 200px;
     display: flex;
     flex-direction: column;
+    /* overflow:hidden wajib -- tanpa ini, nama tugas/PJ yang panjang (white-space:nowrap
+       di .gantt-label-name/.gantt-label-pj) memaksa lebar kolom ini melar melebihi
+       200px lewat automatic minimum size flexbox, padahal .gantt-corner di header
+       (elemen TERPISAH sejak header dipisah dari body) tetap kaku 200px -- akibatnya
+       body jadi lebih lebar dari header dan seluruh timeline+garis "hari ini" geser
+       tidak sinkron dengan kolom tanggal di header. */
+    overflow: hidden;
   }
 
   .gantt-label-cell,
