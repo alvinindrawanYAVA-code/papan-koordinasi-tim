@@ -898,6 +898,16 @@
     flex: 1;
     min-width: 0;
     overflow-x: auto;
+    /* Scrollbar-nya sendiri disembunyikan (bukan overflow-x:hidden -- itu akan
+       mematikan swipe/geser langsung di baris tugas juga) supaya cuma satu
+       scrollbar horizontal yang kelihatan: yang di header (.gantt-header-scroll),
+       yang selalu ada di atas dan tidak perlu discroll ke bawah dulu buat lihat. */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .gantt-timeline-scroll::-webkit-scrollbar {
+    display: none;
   }
 
   .gantt-timeline-header-inner {
