@@ -2731,7 +2731,25 @@
       await fetchTasks();
     }
 
+    // Tanggal mulai tugas baru tidak boleh tanggal yang sudah lewat -- semua tugas
+    // baru harus mulai dari hari ini atau setelahnya. Cuma dibatasi di UI (atribut
+    // "min" + validasi submit), sengaja TIDAK pakai CHECK constraint di database:
+    // constraint begitu bakal ikut memblokir update status/bukti kerja pada tugas
+    // LAMA begitu tanggal mulainya sudah lewat (yang pasti terjadi tiap hari
+    // berjalan), karena CHECK constraint mengecek ulang seluruh baris di setiap
+    // UPDATE, bukan cuma saat baris dibuat.
+    function todayLocalDateStr() {
+      const d = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    }
+    function resetTanggalMulaiMin() {
+      document.getElementById('tanggal-mulai').min = todayLocalDateStr();
+    }
+    resetTanggalMulaiMin();
+
     document.getElementById('tanggal-mulai').addEventListener('input', () => {
+      document.getElementById('tanggal-mulai').setCustomValidity('');
       document.getElementById('tanggal-selesai').setCustomValidity('');
     });
     document.getElementById('tanggal-selesai').addEventListener('input', () => {
@@ -2746,6 +2764,13 @@
       const mulaiInput = document.getElementById('tanggal-mulai');
       const selesaiInput = document.getElementById('tanggal-selesai');
       const statusInput = document.getElementById('status-awal');
+
+      if (mulaiInput.value < todayLocalDateStr()) {
+        mulaiInput.setCustomValidity('Tanggal mulai tidak boleh tanggal yang sudah lewat.');
+        mulaiInput.reportValidity();
+        return;
+      }
+      mulaiInput.setCustomValidity('');
 
       if (selesaiInput.value < mulaiInput.value) {
         selesaiInput.setCustomValidity('Tanggal selesai tidak boleh sebelum tanggal mulai.');
@@ -2801,6 +2826,7 @@
       lampiranInput.value = '';
       selectedPjIds = new Set();
       populatePjMultiselect();
+      resetTanggalMulaiMin();
       mulaiInput.value = '';
       selesaiInput.value = '';
       statusInput.value = 'Belum Mulai';
