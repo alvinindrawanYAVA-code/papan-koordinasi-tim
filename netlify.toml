@@ -9,14 +9,62 @@
 # akan menyajikan /api, /lib, vercel.json, *.md sebagai file statis kalau
 # tidak diblok di sini. Aturan ini tidak bentrok dengan route function
 # (mis. /api/google/connect) karena route function tidak punya ekstensi file.
+#
+# CATATAN: Netlify splat (*) HARUS jadi elemen terakhir di path -- pola
+# seperti "/api/*.js" atau "/*.md" (wildcard di tengah/sebelum suffix) TIDAK
+# match sama sekali (sudah dicoba & terverifikasi gagal saat implementasi,
+# filenya tetap ke-expose 200 tanpa 404). Makanya di bawah ini path server
+# source & dokumen dienumerasi eksplisit, bukan pakai wildcard suffix.
 [[redirects]]
-  from = "/api/*.js"
+  from = "/lib/*"
   to = "/"
   status = 404
   force = true
 
 [[redirects]]
-  from = "/lib/*"
+  from = "/api/cron/check-deadlines.js"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/api/google/callback.js"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/api/google/connect.js"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/api/google/create-event.js"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/api/google/disconnect.js"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/api/reminder/send.js"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/api/task/cancel.js"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/api/task/complete.js"
   to = "/"
   status = 404
   force = true
@@ -28,13 +76,31 @@
   force = true
 
 [[redirects]]
-  from = "/*.md"
+  from = "/README.md"
   to = "/"
   status = 404
   force = true
 
 [[redirects]]
-  from = "/email-template*.html"
+  from = "/APP_README.md"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/CHANGELOG.md"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/email-template.html"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/email-template-reminder.html"
   to = "/"
   status = 404
   force = true
