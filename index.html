@@ -292,7 +292,8 @@
   }
 
   form#task-form,
-  form#anggota-form {
+  form#anggota-form,
+  form#prioritas-form {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
@@ -300,16 +301,19 @@
   }
 
   form#task-form .field,
-  form#anggota-form .field {
+  form#anggota-form .field,
+  form#prioritas-form .field {
     flex: 1 1 150px;
   }
 
-  form#task-form .field-wide {
+  form#task-form .field-wide,
+  form#prioritas-form .field-wide {
     flex: 1 1 100%;
   }
 
   form#task-form label,
-  form#anggota-form label {
+  form#anggota-form label,
+  form#prioritas-form label {
     display: block;
     font-size: 0.8rem;
     color: var(--text-muted);
@@ -319,7 +323,8 @@
   form#task-form input,
   form#task-form select,
   form#task-form textarea,
-  form#anggota-form input {
+  form#anggota-form input,
+  form#prioritas-form input {
     width: 100%;
     height: 44px;
     padding: 10px 12px;
@@ -340,14 +345,16 @@
   form#task-form input:focus,
   form#task-form select:focus,
   form#task-form textarea:focus,
-  form#anggota-form input:focus {
+  form#anggota-form input:focus,
+  form#prioritas-form input:focus {
     outline: none;
     border-color: var(--accent);
     background: var(--surface);
   }
 
   form#task-form button,
-  form#anggota-form button {
+  form#anggota-form button,
+  form#prioritas-form button {
     flex: 0 0 auto;
     align-self: end;
     height: 44px;
@@ -364,7 +371,8 @@
   }
 
   form#task-form button:hover,
-  form#anggota-form button:hover {
+  form#anggota-form button:hover,
+  form#prioritas-form button:hover {
     background: #4338ca;
   }
 
@@ -536,6 +544,165 @@
   .anggota-chip button.google-disconnect:disabled {
     opacity: 0.6;
     cursor: default;
+  }
+
+  /* --- Prioritas --- */
+
+  .prioritas-swatch-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .swatch-option {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .swatch-option.selected {
+    box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--text);
+  }
+
+  .prioritas-hint {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin: 12px 0 0;
+  }
+
+  .prioritas-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  form#task-form button.prioritas-chip-option {
+    display: inline-flex;
+    align-items: center;
+    height: auto;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 400;
+    cursor: pointer;
+  }
+
+  form#task-form button.prioritas-chip-option:hover {
+    border-color: var(--accent);
+  }
+
+  .prioritas-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .prioritas-chip {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 12px 16px;
+    font-size: 0.85rem;
+  }
+
+  .prioritas-chip .color-dot {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    border-radius: 50%;
+  }
+
+  .prioritas-chip .prioritas-nama {
+    font-weight: 600;
+    flex: 1 1 120px;
+    min-width: 0;
+  }
+
+  .prioritas-chip .prioritas-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  .prioritas-chip button.move-btn,
+  .prioritas-chip button.remove-btn {
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 4px 6px;
+  }
+
+  .prioritas-chip button.move-btn:hover {
+    color: var(--accent);
+  }
+
+  .prioritas-chip button.move-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+
+  .prioritas-chip button.remove-btn:hover {
+    color: var(--danger);
+  }
+
+  .priority-badge,
+  .quick-priority-select {
+    flex-shrink: 0;
+    max-width: 120px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .quick-priority-select {
+    border: 1px solid var(--border);
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .prioritas-summary-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 24px;
+  }
+
+  .prioritas-summary-chip {
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+
+  .gantt-bar-priority-dot {
+    flex-shrink: 0;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85);
   }
 
   .section-title {
@@ -1412,6 +1579,7 @@
       <nav class="sidebar-nav">
         <a href="#section-ringkasan" data-nav="ringkasan">🏠 Ringkasan</a>
         <a href="#section-anggota" data-nav="anggota">👥 Anggota Tim</a>
+        <a href="#section-prioritas" data-nav="prioritas">🎯 Prioritas</a>
         <a href="#section-tambah" data-nav="tambah">➕ Tambah Tugas</a>
         <a href="#section-tugas" data-nav="tugas">📋 Tugas</a>
         <a href="#section-gantt-tab" data-nav="gantt">📊 Gantt Chart</a>
@@ -1487,6 +1655,23 @@
       <div class="anggota-list" id="anggota-list"></div>
     </div>
 
+    <div class="card-panel" id="section-prioritas" hidden>
+      <h2 class="panel-title">Prioritas</h2>
+      <p class="panel-desc">Kelola level prioritas tugas (jumlah bebas, urutan bisa diatur) — dipakai untuk menandai &amp; menyortir tugas di Papan/Gantt Chart.</p>
+      <form id="prioritas-form">
+        <div class="field">
+          <label for="prioritas-nama">Nama Level</label>
+          <input type="text" id="prioritas-nama" placeholder="Contoh: Mendesak" required>
+        </div>
+        <div class="field field-wide">
+          <label>Warna</label>
+          <div class="prioritas-swatch-group" id="prioritas-swatch-group"></div>
+        </div>
+        <button type="submit">Tambah Level</button>
+      </form>
+      <div class="prioritas-list" id="prioritas-list"></div>
+    </div>
+
     <div id="dashboard-view">
     <header class="main-header" id="section-ringkasan"></header>
 
@@ -1508,6 +1693,8 @@
         <span class="stat-label">Selesai</span>
       </div>
     </div>
+
+    <div class="prioritas-summary-row" id="prioritas-summary-row"></div>
 
     <div class="card-panel" id="section-tambah">
       <h2 class="panel-title">Tambah Tugas</h2>
@@ -1543,9 +1730,14 @@
             <option value="Dikerjakan">Dikerjakan</option>
           </select>
         </div>
+        <div class="field field-wide">
+          <label>Prioritas (opsional)</label>
+          <div class="prioritas-picker" id="prioritas-picker-group"></div>
+        </div>
         <button type="submit">Tambah Tugas</button>
       </form>
       <p class="pj-hint" id="pj-hint" hidden>Tambahkan minimal 1 anggota tim di atas dulu sebelum membuat tugas.</p>
+      <p class="prioritas-hint" id="prioritas-hint" hidden>Belum ada level prioritas — opsional, bisa lewati dulu atau tambahkan di tab Prioritas.</p>
     </div>
 
     <div id="section-tugas">
@@ -1564,6 +1756,12 @@
             <option value="assigned">🎯 Ditugaskan ke saya</option>
             <option value="created">📝 Dibuat oleh saya</option>
             <option value="both">🔀 Keduanya</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label for="prioritas-filter-select">Prioritas</label>
+          <select id="prioritas-filter-select">
+            <option value="">Semua Prioritas</option>
           </select>
         </div>
       </div>
@@ -1674,12 +1872,36 @@
 
     let tasks = [];
     let anggotaList = [];
+    let prioritasList = [];
 
     const STATUS_CLASS = { 'Belum Mulai': 'status-belum', 'Dikerjakan': 'status-dikerjakan', 'Selesai': 'status-selesai' };
     const STATUS_ICON = { 'Belum Mulai': '🕓', 'Dikerjakan': '⚙️', 'Selesai': '✅' };
     // Perkiraan progres buat badge di bar Gantt Chart -- bukan data asli (app ini
     // belum melacak persentase progres per-tugas), cuma pemetaan kasar dari status.
     const STATUS_PROGRESS = { 'Belum Mulai': 0, 'Dikerjakan': 50, 'Selesai': 100 };
+
+    // Palet warna kurasi buat level prioritas -- jumlah level bebas/tak terbatas
+    // (beda dari status yang 3 nilai tetap + CSS var per nilai), jadi warnanya
+    // disimpan sebagai hex polos per baris di tabel `prioritas` dan badge
+    // solid+soft dihitung di JS (softColorOf), bukan lewat CSS var tetap.
+    const PRIORITAS_SWATCHES = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899', '#64748b'];
+    let selectedSwatch = PRIORITAS_SWATCHES[0];
+
+    function hexToRgb(hex) {
+      const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '');
+      return m ? { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) } : { r: 107, g: 114, b: 128 };
+    }
+    // Campur warna solid ke arah putih secara manual di JS -- bukan CSS
+    // color-mix() -- supaya badge tetap konsisten di semua browser, termasuk
+    // yang belum dukung color-mix().
+    function softColorOf(hex, amount = 0.85) {
+      const { r, g, b } = hexToRgb(hex);
+      const mix = c => Math.round(c + (255 - c) * amount);
+      return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
+    }
+    function prioritasById(id) {
+      return id ? (prioritasList.find(p => p.id === id) || null) : null;
+    }
 
     let currentUserId = localStorage.getItem('currentUserId') || '';
     let currentUserRole = localStorage.getItem('currentUserRole') || 'assigned';
@@ -1718,17 +1940,25 @@
       updateRoleSelectVisibility();
       renderSidebarGreeting();
     }
+    let currentPrioritasFilter = localStorage.getItem('currentPrioritasFilter') || '';
     function getVisibleTasks() {
-      if (!currentUserId) return tasks;
-      const currentUser = anggotaList.find(a => a.id === currentUserId);
-      if (!currentUser) return tasks;
-      return tasks.filter(t => {
-        const isAssigned = (t.tugas_pj || []).some(p => p.anggota_id === currentUserId);
-        const isCreated = t.dibuat_oleh === currentUser.nama;
-        if (currentUserRole === 'created') return isCreated;
-        if (currentUserRole === 'both') return isAssigned || isCreated;
-        return isAssigned;
-      });
+      let result = tasks;
+      if (currentUserId) {
+        const currentUser = anggotaList.find(a => a.id === currentUserId);
+        if (currentUser) {
+          result = result.filter(t => {
+            const isAssigned = (t.tugas_pj || []).some(p => p.anggota_id === currentUserId);
+            const isCreated = t.dibuat_oleh === currentUser.nama;
+            if (currentUserRole === 'created') return isCreated;
+            if (currentUserRole === 'both') return isAssigned || isCreated;
+            return isAssigned;
+          });
+        }
+      }
+      if (currentPrioritasFilter) {
+        result = result.filter(t => t.prioritas_id === currentPrioritasFilter);
+      }
+      return result;
     }
     document.getElementById('current-user-select').addEventListener('change', (e) => {
       currentUserId = e.target.value;
@@ -1741,16 +1971,41 @@
       localStorage.setItem('currentUserRole', currentUserRole);
       render();
     });
+    document.getElementById('prioritas-filter-select').addEventListener('change', (e) => {
+      currentPrioritasFilter = e.target.value;
+      localStorage.setItem('currentPrioritasFilter', currentPrioritasFilter);
+      render();
+    });
+    function populatePrioritasFilterSelect() {
+      // Level yang jadi filter aktif bisa saja sudah dihapus dari tab Prioritas --
+      // balikkan filter ke "Semua Prioritas" kalau begitu, supaya papan tidak
+      // diam-diam kosong karena menyaring id yang sudah tidak ada.
+      if (currentPrioritasFilter && !prioritasList.some(p => p.id === currentPrioritasFilter)) {
+        currentPrioritasFilter = '';
+        localStorage.setItem('currentPrioritasFilter', '');
+      }
+      const select = document.getElementById('prioritas-filter-select');
+      select.innerHTML = '<option value="">Semua Prioritas</option>';
+      prioritasList.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.nama;
+        select.appendChild(opt);
+      });
+      select.value = currentPrioritasFilter;
+    }
 
+    const TAB_VIEWS = ['anggota', 'prioritas', 'gantt', 'panduan'];
     let mainView = 'dashboard';
     function setMainView(view) {
       mainView = view;
       document.getElementById('dashboard-view').hidden = view !== 'dashboard';
       document.getElementById('section-anggota').hidden = view !== 'anggota';
+      document.getElementById('section-prioritas').hidden = view !== 'prioritas';
       document.getElementById('section-gantt-tab').hidden = view !== 'gantt';
       document.getElementById('section-panduan').hidden = view !== 'panduan';
       document.querySelectorAll('.sidebar-nav a').forEach(a => {
-        a.classList.toggle('active', a.dataset.nav === view && (view === 'anggota' || view === 'gantt' || view === 'panduan'));
+        a.classList.toggle('active', a.dataset.nav === view && TAB_VIEWS.includes(view));
       });
       if (view === 'gantt') renderGantt();
       if (view === 'dashboard') equalizeColumnHeights();
@@ -1758,7 +2013,7 @@
     document.querySelectorAll('.sidebar-nav a').forEach(a => {
       a.addEventListener('click', (e) => {
         e.preventDefault();
-        if (a.dataset.nav === 'anggota' || a.dataset.nav === 'gantt' || a.dataset.nav === 'panduan') {
+        if (TAB_VIEWS.includes(a.dataset.nav)) {
           setMainView(a.dataset.nav);
         } else {
           setMainView('dashboard');
@@ -1787,6 +2042,17 @@
       }
       anggotaList = data || [];
       renderAnggota();
+    }
+
+    async function fetchPrioritas() {
+      const { data, error } = await db.from('prioritas').select('*').order('urutan', { ascending: true });
+      if (error) {
+        console.error('Gagal memuat prioritas:', error);
+        showToast('Gagal memuat data prioritas.');
+        return;
+      }
+      prioritasList = data || [];
+      renderPrioritas();
     }
 
     async function fetchTasks() {
@@ -1984,6 +2250,175 @@
       await fetchAnggota();
     });
 
+    // --- Prioritas ---
+
+    function renderSwatchPicker() {
+      const group = document.getElementById('prioritas-swatch-group');
+      group.innerHTML = '';
+      PRIORITAS_SWATCHES.forEach(hex => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'swatch-option' + (selectedSwatch === hex ? ' selected' : '');
+        btn.style.background = hex;
+        btn.title = hex;
+        btn.addEventListener('click', () => {
+          selectedSwatch = hex;
+          renderSwatchPicker();
+        });
+        group.appendChild(btn);
+      });
+    }
+
+    async function movePrioritas(id, direction) {
+      const idx = prioritasList.findIndex(p => p.id === id);
+      const swapIdx = idx + direction;
+      if (idx === -1 || swapIdx < 0 || swapIdx >= prioritasList.length) return;
+      const a = prioritasList[idx];
+      const b = prioritasList[swapIdx];
+      const [{ error: e1 }, { error: e2 }] = await Promise.all([
+        db.from('prioritas').update({ urutan: b.urutan }).eq('id', a.id),
+        db.from('prioritas').update({ urutan: a.urutan }).eq('id', b.id)
+      ]);
+      if (e1 || e2) {
+        console.error('Gagal ubah urutan prioritas:', e1 || e2);
+        showToast('Gagal ubah urutan prioritas.');
+        return;
+      }
+      await fetchPrioritas();
+    }
+
+    function renderPrioritas() {
+      const list = document.getElementById('prioritas-list');
+      list.innerHTML = '';
+
+      if (prioritasList.length === 0) {
+        const hint = document.createElement('p');
+        hint.className = 'empty-hint';
+        hint.textContent = 'Belum ada level prioritas.';
+        list.appendChild(hint);
+      } else {
+        prioritasList.forEach((p, idx) => {
+          const chip = document.createElement('div');
+          chip.className = 'prioritas-chip';
+
+          const dot = document.createElement('span');
+          dot.className = 'color-dot';
+          dot.style.background = p.warna;
+
+          const nama = document.createElement('span');
+          nama.className = 'prioritas-nama';
+          nama.textContent = p.nama;
+
+          const actions = document.createElement('div');
+          actions.className = 'prioritas-actions';
+
+          const upBtn = document.createElement('button');
+          upBtn.type = 'button';
+          upBtn.className = 'move-btn';
+          upBtn.textContent = '↑';
+          upBtn.title = 'Naikkan urutan';
+          upBtn.disabled = idx === 0;
+          upBtn.addEventListener('click', () => movePrioritas(p.id, -1));
+
+          const downBtn = document.createElement('button');
+          downBtn.type = 'button';
+          downBtn.className = 'move-btn';
+          downBtn.textContent = '↓';
+          downBtn.title = 'Turunkan urutan';
+          downBtn.disabled = idx === prioritasList.length - 1;
+          downBtn.addEventListener('click', () => movePrioritas(p.id, 1));
+
+          const removeBtn = document.createElement('button');
+          removeBtn.type = 'button';
+          removeBtn.className = 'remove-btn';
+          removeBtn.textContent = '✕';
+          removeBtn.title = 'Hapus level prioritas';
+          removeBtn.addEventListener('click', async () => {
+            const ok = window.confirm(`Hapus level prioritas "${p.nama}"? Tugas yang memakai level ini akan jadi "Tanpa Prioritas".`);
+            if (!ok) return;
+            const { error } = await db.from('prioritas').delete().eq('id', p.id);
+            if (error) {
+              console.error('Gagal hapus prioritas:', error);
+              showToast('Gagal hapus level prioritas.');
+              return;
+            }
+            await fetchPrioritas();
+          });
+
+          actions.appendChild(upBtn);
+          actions.appendChild(downBtn);
+          actions.appendChild(removeBtn);
+
+          chip.appendChild(dot);
+          chip.appendChild(nama);
+          chip.appendChild(actions);
+          list.appendChild(chip);
+        });
+      }
+
+      populatePrioritasPicker();
+      populatePrioritasFilterSelect();
+      render();
+    }
+
+    let selectedPrioritasId = null;
+    function populatePrioritasPicker() {
+      const group = document.getElementById('prioritas-picker-group');
+      group.innerHTML = '';
+
+      const noneBtn = document.createElement('button');
+      noneBtn.type = 'button';
+      noneBtn.className = 'prioritas-chip-option' + (!selectedPrioritasId ? ' selected' : '');
+      noneBtn.textContent = 'Tanpa Prioritas';
+      noneBtn.addEventListener('click', () => {
+        selectedPrioritasId = null;
+        populatePrioritasPicker();
+      });
+      group.appendChild(noneBtn);
+
+      prioritasList.forEach(p => {
+        const isSel = selectedPrioritasId === p.id;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'prioritas-chip-option' + (isSel ? ' selected' : '');
+        btn.textContent = p.nama;
+        btn.style.background = isSel ? softColorOf(p.warna) : '';
+        btn.style.borderColor = isSel ? p.warna : '';
+        btn.style.color = isSel ? p.warna : '';
+        btn.style.fontWeight = isSel ? '700' : '400';
+        btn.addEventListener('click', () => {
+          selectedPrioritasId = p.id;
+          populatePrioritasPicker();
+        });
+        group.appendChild(btn);
+      });
+
+      document.getElementById('prioritas-hint').hidden = prioritasList.length > 0;
+    }
+
+    document.getElementById('prioritas-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const namaInput = document.getElementById('prioritas-nama');
+      const nextUrutan = prioritasList.length ? Math.max(...prioritasList.map(p => p.urutan)) + 1 : 0;
+      const creator = getLoggedInAnggota();
+
+      const { error } = await db.from('prioritas').insert({
+        nama: namaInput.value.trim(),
+        warna: selectedSwatch,
+        urutan: nextUrutan,
+        dibuat_oleh: creator ? creator.nama : null
+      });
+      if (error) {
+        console.error('Gagal tambah prioritas:', error);
+        showToast('Gagal menambah level prioritas.');
+        return;
+      }
+
+      namaInput.value = '';
+      namaInput.focus();
+      await fetchPrioritas();
+    });
+
     // --- Tugas ---
 
     function renderStats() {
@@ -1993,6 +2428,45 @@
         const count = visibleTasks.filter(t => t.status === status).length;
         document.getElementById(`stat-${STATUS_CLASS[status].replace('status-', '')}`).textContent = count;
       });
+    }
+
+    // Urutan level prioritas (index di prioritasList, yang sendiri sudah terurut
+    // oleh kolom `urutan`) -- dipakai buat sort kartu di Papan. Tugas tanpa
+    // prioritas atau yang levelnya sudah dihapus selalu di-sort paling akhir.
+    function prioritasRank(task) {
+      if (!task.prioritas_id) return Infinity;
+      const idx = prioritasList.findIndex(p => p.id === task.prioritas_id);
+      return idx === -1 ? Infinity : idx;
+    }
+
+    // Grid .stats-row tetap 4 kolom (Total/Belum/Dikerjakan/Selesai) karena jumlahnya
+    // memang tetap -- tapi jumlah level prioritas bebas, jadi ringkasannya dibuat
+    // baris chip flex-wrap terpisah di sini, bukan dipaksa masuk grid yang sama.
+    function renderPrioritasSummary() {
+      const row = document.getElementById('prioritas-summary-row');
+      row.innerHTML = '';
+      if (prioritasList.length === 0) return;
+
+      const visible = getVisibleTasks().filter(t => t.status !== 'Dibatalkan');
+      prioritasList.forEach(p => {
+        const count = visible.filter(t => t.prioritas_id === p.id).length;
+        const chip = document.createElement('span');
+        chip.className = 'prioritas-summary-chip';
+        chip.style.background = softColorOf(p.warna);
+        chip.style.color = p.warna;
+        chip.textContent = `${p.nama}: ${count}`;
+        row.appendChild(chip);
+      });
+
+      const noneCount = visible.filter(t => !t.prioritas_id).length;
+      if (noneCount > 0) {
+        const chip = document.createElement('span');
+        chip.className = 'prioritas-summary-chip';
+        chip.style.background = 'var(--belum-soft)';
+        chip.style.color = 'var(--text-muted)';
+        chip.textContent = `Tanpa Prioritas: ${noneCount}`;
+        row.appendChild(chip);
+      }
     }
 
     // CSS Grid otomatis menyamakan tinggi kolom papan saat berdampingan (desktop),
@@ -2014,11 +2488,18 @@
 
     function render() {
       renderStats();
+      renderPrioritasSummary();
       const visibleTasks = getVisibleTasks();
       STATUSES.forEach(status => {
         const list = document.querySelector(`[data-list="${status}"]`);
         const countEl = document.querySelector(`[data-count="${status}"]`);
-        const items = visibleTasks.filter(t => t.status === status);
+        // Diurutkan berdasarkan level prioritas (yang paling atas di tab Prioritas
+        // tampil duluan) -- tugas tanpa prioritas selalu di bawah, urutan asli
+        // (tanggal dibuat, dari query fetchTasks) dipertahankan sebagai tie-break
+        // karena .sort() JS stabil.
+        const items = visibleTasks.filter(t => t.status === status)
+          .slice()
+          .sort((a, b) => prioritasRank(a) - prioritasRank(b));
 
         countEl.textContent = `(${items.length})`;
         list.innerHTML = '';
@@ -2077,6 +2558,56 @@
           const isAssignee = loggedInAnggota && pjList.some(p => p.anggota_id === loggedInAnggota.id);
           const isViewingAsSelf = loggedInAnggota && currentUserId === loggedInAnggota.id;
           const canEditStatus = (isCreator || isAssignee) && isViewingAsSelf;
+
+          // Wewenang ubah prioritas: SENGAJA BEDA dari canEditStatus -- cuma
+          // pembuat tugas ATAU siapa pun yang men-set prioritas tugas ini
+          // (task.prioritas_diset_oleh) yang boleh, bukan penanggung jawab.
+          const canEditPrioritas = isViewingAsSelf && loggedInAnggota &&
+            (isCreator || task.prioritas_diset_oleh === loggedInAnggota.nama);
+          const prioritasEntry = prioritasById(task.prioritas_id);
+
+          let quickPrioritySelect = null;
+          let priorityBadge = null;
+          if (canEditPrioritas) {
+            quickPrioritySelect = document.createElement('select');
+            quickPrioritySelect.className = 'quick-priority-select';
+            quickPrioritySelect.title = 'Ubah prioritas';
+            const noneOpt = document.createElement('option');
+            noneOpt.value = '';
+            noneOpt.textContent = 'Tanpa Prioritas';
+            quickPrioritySelect.appendChild(noneOpt);
+            prioritasList.forEach(p => {
+              const opt = document.createElement('option');
+              opt.value = p.id;
+              opt.textContent = p.nama;
+              if (p.id === task.prioritas_id) opt.selected = true;
+              quickPrioritySelect.appendChild(opt);
+            });
+            quickPrioritySelect.style.background = prioritasEntry ? softColorOf(prioritasEntry.warna) : '';
+            quickPrioritySelect.style.color = prioritasEntry ? prioritasEntry.warna : 'var(--text-muted)';
+            quickPrioritySelect.addEventListener('click', e => e.stopPropagation());
+            quickPrioritySelect.addEventListener('mousedown', e => e.stopPropagation());
+            quickPrioritySelect.addEventListener('change', async () => {
+              const newId = quickPrioritySelect.value || null;
+              const { error } = await db.from('tugas')
+                .update({ prioritas_id: newId, prioritas_diset_oleh: loggedInAnggota.nama })
+                .eq('id', task.id);
+              if (error) {
+                console.error('Gagal ubah prioritas:', error);
+                showToast('Gagal ubah prioritas.');
+                quickPrioritySelect.value = task.prioritas_id || '';
+                return;
+              }
+              await fetchTasks();
+            });
+          } else if (prioritasEntry) {
+            priorityBadge = document.createElement('span');
+            priorityBadge.className = 'priority-badge';
+            priorityBadge.textContent = prioritasEntry.nama;
+            priorityBadge.style.background = softColorOf(prioritasEntry.warna);
+            priorityBadge.style.color = prioritasEntry.warna;
+            priorityBadge.title = 'Cuma pembuat atau pemberi prioritas tugas ini yang boleh mengubahnya';
+          }
 
           let quickStatusSelect = null;
           let quickStatusBadge = null;
@@ -2202,6 +2733,7 @@
           }
 
           head.appendChild(statusIcon);
+          if (quickPrioritySelect || priorityBadge) head.appendChild(quickPrioritySelect || priorityBadge);
           head.appendChild(nama);
           summaryMeta.appendChild(quickStatusSelect || quickStatusBadge);
           summaryMeta.appendChild(chevron);
@@ -2472,7 +3004,14 @@
       const totalDays = Math.round((rangeEnd - rangeStart) / DAY_MS) + 1;
       const totalWidth = totalDays * DAY_W;
 
-      const sorted = [...withDates].sort((a, b) => parseDate(a.tanggal_mulai) - parseDate(b.tanggal_mulai));
+      // Tanggal tetap jadi sort utama -- Gantt intinya garis waktu, jadi harus tetap
+      // kebaca kronologis. Prioritas cuma dipakai sebagai tie-breaker kalau 2 tugas
+      // mulai di tanggal yang sama persis (beda dari sort di Papan yang prioritas jadi
+      // utama, karena kolom Papan tidak punya sumbu waktu untuk dijaga urutannya).
+      const sorted = [...withDates].sort((a, b) => {
+        const dateDiff = parseDate(a.tanggal_mulai) - parseDate(b.tanggal_mulai);
+        return dateDiff !== 0 ? dateDiff : prioritasRank(a) - prioritasRank(b);
+      });
 
       // Header (bulan+tanggal) sengaja dipisah dari body (label+bar) jadi 2 elemen
       // berbeda -- .gantt-scroll-outer (vertikal) membungkus body saja, sementara
@@ -2597,7 +3136,18 @@
         // Konten di dalam bar (avatar/tanggal/badge) yang menyesuaikan lewat
         // overflow:hidden kalau tugasnya memang pendek, bukan sebaliknya.
         bar.style.width = Math.max(spanDays * DAY_W - 4, 12) + 'px';
-        bar.title = `${task.nama} — ${formatTanggal(task.tanggal_mulai)} – ${formatTanggal(task.tanggal_selesai)} (${task.status})`;
+        // .gantt-bar bulat penuh (border-radius:999px, tanpa sisi lurus) --
+        // border-left biasa tidak akan kelihatan jelas di bentuk pill begitu, jadi
+        // indikator prioritas dibuat titik warna kecil di dalam bar, bukan border.
+        const ganttPrioritas = prioritasById(task.prioritas_id);
+        bar.title = `${task.nama} — ${formatTanggal(task.tanggal_mulai)} – ${formatTanggal(task.tanggal_selesai)} (${task.status}${ganttPrioritas ? ', ' + ganttPrioritas.nama : ''})`;
+
+        if (ganttPrioritas) {
+          const priorityDot = document.createElement('span');
+          priorityDot.className = 'gantt-bar-priority-dot';
+          priorityDot.style.background = ganttPrioritas.warna;
+          bar.appendChild(priorityDot);
+        }
 
         const barAvatarWrap = document.createElement('span');
         barAvatarWrap.className = 'gantt-bar-avatar-wrap';
@@ -2801,7 +3351,9 @@
         bukti: null,
         tanggal_mulai: mulaiInput.value,
         tanggal_selesai: selesaiInput.value,
-        dibuat_pada: new Date().toISOString()
+        dibuat_pada: new Date().toISOString(),
+        prioritas_id: selectedPrioritasId || null,
+        prioritas_diset_oleh: selectedPrioritasId ? creator.nama : null
       }).select().single();
 
       if (error) {
@@ -2830,6 +3382,8 @@
       mulaiInput.value = '';
       selesaiInput.value = '';
       statusInput.value = 'Belum Mulai';
+      selectedPrioritasId = null;
+      populatePrioritasPicker();
       namaInput.focus();
 
       await fetchTasks();
@@ -2873,6 +3427,7 @@
         .on('postgres_changes', { event: '*', schema: 'public', table: 'tugas' }, () => fetchTasks())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'tugas_pj' }, () => fetchTasks())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'anggota' }, () => fetchAnggota())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'prioritas' }, () => fetchPrioritas())
         .subscribe();
 
       const googleParam = new URLSearchParams(location.search).get('google');
@@ -2885,7 +3440,10 @@
         history.replaceState(null, '', location.pathname);
       }
 
-      await fetchAnggota();
+      renderSwatchPicker();
+      // Anggota & prioritas ditunggu bareng dulu -- render kartu tugas butuh
+      // keduanya (nama PJ, warna/nama level prioritas) begitu fetchTasks() jalan.
+      await Promise.all([fetchAnggota(), fetchPrioritas()]);
       applyDefaultCurrentUser(currentSessionEmail);
       fetchTasks();
     }
