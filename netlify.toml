@@ -1,0 +1,40 @@
+[build]
+  publish = "."
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Blok akses publik ke source server-side & dokumen internal -- publish="."
+# akan menyajikan /api, /lib, vercel.json, *.md sebagai file statis kalau
+# tidak diblok di sini. Aturan ini tidak bentrok dengan route function
+# (mis. /api/google/connect) karena route function tidak punya ekstensi file.
+[[redirects]]
+  from = "/api/*.js"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/lib/*"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/vercel.json"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/*.md"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/email-template*.html"
+  to = "/"
+  status = 404
+  force = true
