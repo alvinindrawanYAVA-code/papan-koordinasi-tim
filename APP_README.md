@@ -4,11 +4,11 @@ Aplikasi web sederhana untuk tim kecil yang selama ini koordinasi tugas lewat Wh
 
 ## Fitur
 
-- **Layout dashboard modern**: sidebar navigasi (Ringkasan, Anggota Tim, Tambah Tugas, Tugas) + area konten utama, kartu ringkasan berwarna (Total/Belum Mulai/Dikerjakan/Selesai)
+- **Layout dashboard modern**: sidebar navigasi (Ringkasan, Tambah Tugas, Tugas, Gantt Chart, Anggota Tim, Panduan) + area konten utama, kartu ringkasan berwarna (Total/Belum Mulai/Dikerjakan/Selesai)
 - Kelola **Anggota Tim**: tambah/hapus nama + email anggota, jadi bisa dipilih sebagai penanggung jawab tugas — tampil sebagai tab tersendiri di sidebar (tidak numpuk di halaman utama biar tetap rapi walau anggotanya banyak)
 - Tambah tugas: nama tugas, **deskripsi tambahan (opsional)**, **penanggung jawab (bisa pilih lebih dari 1 anggota sekaligus — 1 status dipakai bersama, bukan progres per-orang)**, **pembuat tugas (pilih dari Anggota Tim, untuk transparansi siapa yang assign)**, **periode pengerjaan (tanggal mulai & tanggal selesai, wajib diisi)**, dan status awal (Belum Mulai/Dikerjakan)
 - Ubah status tugas antara **Belum Mulai**, **Dikerjakan**, dan **Selesai** — wajib isi link bukti kerja (mis. link Google Drive/foto yang sudah diupload ke tempat lain) saat ditandai **Selesai**
-- **Prioritas tugas (wajib diisi, level bebas/tidak terbatas)**: kelola level prioritas Anda sendiri (nama + warna, jumlah bebas, bisa diurutkan naik/turun) lewat tab **Prioritas** di sidebar — beda dari status yang cuma 3 nilai tetap. Tiap tugas **wajib** diberi 1 level prioritas saat dibuat (submit "Tambah Tugas" ditolak kalau belum dipilih — sama seperti penanggung jawab, dan minimal 1 level prioritas harus sudah ada dulu di tab Prioritas sebelum tugas bisa dibuat sama sekali), tampil sebagai badge warna di kartu tugas & Gantt Chart, bisa dipakai buat menyortir (kartu di Papan diurutkan sesuai level, tertinggi dulu) dan menyaring papan/Gantt/ringkasan lewat filter "Prioritas". **Cuma pembuat tugas atau siapa pun yang terakhir men-set prioritas tugas itu** yang boleh mengubahnya — beda dari ubah status yang juga boleh dilakukan penanggung jawab. Tugas lama (dibuat sebelum fitur ini wajib) atau yang level prioritasnya sudah dihapus tetap bisa berstatus "Tanpa Prioritas".
+- **Prioritas tugas (wajib diisi)**: level prioritas (nama + warna) dikelola langsung lewat Supabase SQL Editor, **bukan** lewat tab sidebar (tab "Prioritas" sudah dihapus dari UI atas permintaan user — lihat CHANGELOG.md) — beda dari status yang cuma 3 nilai tetap. Tiap tugas **wajib** diberi 1 level prioritas saat dibuat (submit "Tambah Tugas" ditolak kalau belum dipilih — sama seperti penanggung jawab), tampil sebagai badge warna di kartu tugas & Gantt Chart, bisa dipakai buat menyortir (kartu di Papan diurutkan sesuai level, tertinggi dulu) dan menyaring papan/Gantt/ringkasan lewat filter "Prioritas". **Cuma pembuat tugas atau siapa pun yang terakhir men-set prioritas tugas itu** yang boleh mengubahnya — beda dari ubah status yang juga boleh dilakukan penanggung jawab. Tugas lama (dibuat sebelum fitur ini wajib) atau yang level prioritasnya sudah dihapus tetap bisa berstatus "Tanpa Prioritas".
 - **2 cara lihat tugas**: tampilan **Papan** (kolom per status) atau **Gantt Chart** (bar per tugas di sepanjang sumbu waktu mingguan, warna sesuai status) — tinggal toggle
 - **Filter "Lihat Sebagai"**: pilih nama anggota di sidebar untuk menyaring papan/Gantt/ringkasan supaya cuma menampilkan tugas yang terkait dia (di-assign ke dia ATAU dibuat olehnya); pilih "🔍 Semua Tugas" untuk lihat semuanya lagi. Filter ini juga menentukan siapa yang boleh klik tombol "Kirim Pengingat" (lihat di bawah) — bukan sistem login sungguhan, cuma pembatas kenyamanan di UI karena app ini belum punya autentikasi.
 - **Notifikasi email otomatis saat tugas dibuat**: email rincian tugas (semacam tanda terima) otomatis dikirim ke **setiap** penanggung jawab (masing-masing dapat email sendiri-sendiri) lewat EmailJS begitu tugas baru dibuat (lihat setup di bawah)
@@ -109,9 +109,10 @@ Aplikasi ini butuh 1 project Supabase (gratis) sebagai database bersama. Kalau m
    `google_tokens` **sengaja tidak diberi kebijakan RLS apa pun** (default-deny) — tabel ini menyimpan token OAuth Google dan cuma boleh diakses lewat `service_role` key dari server function, tidak pernah lewat publishable key yang ada di `index.html`.
 
    ```sql
-   -- Prioritas: level custom, jumlah tak terbatas, dikelola lewat tab "Prioritas".
-   -- `urutan` menentukan urutan tampil/sort (0 = paling atas) -- level baru selalu
-   -- ditambahkan di urutan paling akhir, lalu bisa digeser naik/turun manual dari UI.
+   -- Prioritas: level custom, jumlah tak terbatas. TIDAK ada tab UI untuk kelola
+   -- level (dihapus atas permintaan user) -- tambah/ubah/hapus/urutkan level
+   -- dilakukan manual lewat Supabase SQL Editor. `urutan` menentukan urutan
+   -- tampil/sort (0 = paling atas/prioritas tertinggi).
    create table prioritas (id uuid primary key default gen_random_uuid(), nama text not null, warna text not null, urutan integer not null default 0, dibuat_oleh text, created_at timestamptz not null default now());
    alter table prioritas enable row level security;
    create policy "prioritas_select" on prioritas for select using (true);
