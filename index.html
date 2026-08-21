@@ -1731,13 +1731,13 @@
           </select>
         </div>
         <div class="field field-wide">
-          <label>Prioritas (opsional)</label>
+          <label>Prioritas</label>
           <div class="prioritas-picker" id="prioritas-picker-group"></div>
         </div>
         <button type="submit">Tambah Tugas</button>
       </form>
       <p class="pj-hint" id="pj-hint" hidden>Tambahkan minimal 1 anggota tim di atas dulu sebelum membuat tugas.</p>
-      <p class="prioritas-hint" id="prioritas-hint" hidden>Belum ada level prioritas — opsional, bisa lewati dulu atau tambahkan di tab Prioritas.</p>
+      <p class="prioritas-hint" id="prioritas-hint" hidden>Belum ada level prioritas — tambahkan minimal 1 level dulu di tab Prioritas sebelum bisa membuat tugas.</p>
     </div>
 
     <div id="section-tugas">
@@ -2366,16 +2366,11 @@
       const group = document.getElementById('prioritas-picker-group');
       group.innerHTML = '';
 
-      const noneBtn = document.createElement('button');
-      noneBtn.type = 'button';
-      noneBtn.className = 'prioritas-chip-option' + (!selectedPrioritasId ? ' selected' : '');
-      noneBtn.textContent = 'Tanpa Prioritas';
-      noneBtn.addEventListener('click', () => {
-        selectedPrioritasId = null;
-        populatePrioritasPicker();
-      });
-      group.appendChild(noneBtn);
-
+      // SENGAJA TANPA opsi "Tanpa Prioritas" di sini -- beda dari dropdown
+      // quick-edit di kartu tugas yang masih punya opsi itu. Prioritas wajib
+      // diisi saat bikin tugas baru (baris validasi di submit handler task-form
+      // menolak submit kalau selectedPrioritasId masih null), jadi tidak ada
+      // pilihan buat sengaja melewatinya di sini.
       prioritasList.forEach(p => {
         const isSel = selectedPrioritasId === p.id;
         const btn = document.createElement('button');
@@ -3341,6 +3336,10 @@
         showToast('Akun Anda belum terhubung ke data Anggota Tim. Hubungi admin.');
         return;
       }
+      if (!selectedPrioritasId) {
+        showToast(prioritasList.length === 0 ? 'Tambahkan minimal 1 level prioritas dulu di tab Prioritas.' : 'Pilih prioritas tugas dulu.');
+        return;
+      }
 
       const { data: newTask, error } = await db.from('tugas').insert({
         nama: namaInput.value.trim(),
@@ -3352,8 +3351,8 @@
         tanggal_mulai: mulaiInput.value,
         tanggal_selesai: selesaiInput.value,
         dibuat_pada: new Date().toISOString(),
-        prioritas_id: selectedPrioritasId || null,
-        prioritas_diset_oleh: selectedPrioritasId ? creator.nama : null
+        prioritas_id: selectedPrioritasId,
+        prioritas_diset_oleh: creator.nama
       }).select().single();
 
       if (error) {

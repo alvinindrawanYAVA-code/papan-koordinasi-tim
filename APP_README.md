@@ -8,7 +8,7 @@ Aplikasi web sederhana untuk tim kecil yang selama ini koordinasi tugas lewat Wh
 - Kelola **Anggota Tim**: tambah/hapus nama + email anggota, jadi bisa dipilih sebagai penanggung jawab tugas — tampil sebagai tab tersendiri di sidebar (tidak numpuk di halaman utama biar tetap rapi walau anggotanya banyak)
 - Tambah tugas: nama tugas, **deskripsi tambahan (opsional)**, **penanggung jawab (bisa pilih lebih dari 1 anggota sekaligus — 1 status dipakai bersama, bukan progres per-orang)**, **pembuat tugas (pilih dari Anggota Tim, untuk transparansi siapa yang assign)**, **periode pengerjaan (tanggal mulai & tanggal selesai, wajib diisi)**, dan status awal (Belum Mulai/Dikerjakan)
 - Ubah status tugas antara **Belum Mulai**, **Dikerjakan**, dan **Selesai** — wajib isi link bukti kerja (mis. link Google Drive/foto yang sudah diupload ke tempat lain) saat ditandai **Selesai**
-- **Prioritas tugas (opsional, level bebas/tidak terbatas)**: kelola level prioritas Anda sendiri (nama + warna, jumlah bebas, bisa diurutkan naik/turun) lewat tab **Prioritas** di sidebar — beda dari status yang cuma 3 nilai tetap. Tiap tugas bisa diberi 1 level prioritas saat dibuat (opsional, boleh dilewati), tampil sebagai badge warna di kartu tugas & Gantt Chart, bisa dipakai buat menyortir (kartu di Papan diurutkan sesuai level, tertinggi dulu) dan menyaring papan/Gantt/ringkasan lewat filter "Prioritas". **Cuma pembuat tugas atau siapa pun yang terakhir men-set prioritas tugas itu** yang boleh mengubahnya — beda dari ubah status yang juga boleh dilakukan penanggung jawab.
+- **Prioritas tugas (wajib diisi, level bebas/tidak terbatas)**: kelola level prioritas Anda sendiri (nama + warna, jumlah bebas, bisa diurutkan naik/turun) lewat tab **Prioritas** di sidebar — beda dari status yang cuma 3 nilai tetap. Tiap tugas **wajib** diberi 1 level prioritas saat dibuat (submit "Tambah Tugas" ditolak kalau belum dipilih — sama seperti penanggung jawab, dan minimal 1 level prioritas harus sudah ada dulu di tab Prioritas sebelum tugas bisa dibuat sama sekali), tampil sebagai badge warna di kartu tugas & Gantt Chart, bisa dipakai buat menyortir (kartu di Papan diurutkan sesuai level, tertinggi dulu) dan menyaring papan/Gantt/ringkasan lewat filter "Prioritas". **Cuma pembuat tugas atau siapa pun yang terakhir men-set prioritas tugas itu** yang boleh mengubahnya — beda dari ubah status yang juga boleh dilakukan penanggung jawab. Tugas lama (dibuat sebelum fitur ini wajib) atau yang level prioritasnya sudah dihapus tetap bisa berstatus "Tanpa Prioritas".
 - **2 cara lihat tugas**: tampilan **Papan** (kolom per status) atau **Gantt Chart** (bar per tugas di sepanjang sumbu waktu mingguan, warna sesuai status) — tinggal toggle
 - **Filter "Lihat Sebagai"**: pilih nama anggota di sidebar untuk menyaring papan/Gantt/ringkasan supaya cuma menampilkan tugas yang terkait dia (di-assign ke dia ATAU dibuat olehnya); pilih "🔍 Semua Tugas" untuk lihat semuanya lagi. Filter ini juga menentukan siapa yang boleh klik tombol "Kirim Pengingat" (lihat di bawah) — bukan sistem login sungguhan, cuma pembatas kenyamanan di UI karena app ini belum punya autentikasi.
 - **Notifikasi email otomatis saat tugas dibuat**: email rincian tugas (semacam tanda terima) otomatis dikirim ke **setiap** penanggung jawab (masing-masing dapat email sendiri-sendiri) lewat EmailJS begitu tugas baru dibuat (lihat setup di bawah)
@@ -120,9 +120,11 @@ Aplikasi ini butuh 1 project Supabase (gratis) sebagai database bersama. Kalau m
    create policy "prioritas_delete" on prioritas for delete using (true);
    alter publication supabase_realtime add table prioritas;
 
-   -- Tugas: prioritas opsional (nullable) -- tugas lama otomatis tanpa prioritas.
-   -- on delete set null: hapus 1 level prioritas TIDAK menghapus tugas, cuma
-   -- melepas referensinya (tugas jadi "Tanpa Prioritas" lagi).
+   -- Tugas: prioritas wajib diisi utk tugas BARU (ditegakkan client-side di form
+   -- Tambah Tugas), tapi kolomnya tetap nullable di DB -- tugas lama (sebelum jadi
+   -- wajib) otomatis tanpa prioritas, dan on delete set null: hapus 1 level
+   -- prioritas TIDAK menghapus tugas, cuma melepas referensinya (tugas jadi
+   -- "Tanpa Prioritas" lagi).
    alter table tugas add column prioritas_id uuid references prioritas(id) on delete set null;
    alter table tugas add column prioritas_diset_oleh text;
    ```
